@@ -5,7 +5,9 @@
   "type": "module",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npx rollup -c"
+    "build": "npx rollup -c",
+    "dev": "npx rollup -c -w",
+    "prepare": "npm run build"
   },
   "keywords": [],
   "author": "",
