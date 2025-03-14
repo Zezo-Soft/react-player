@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "nodenext",
+    "jsx": "react",
+    "target": "ES2020",
+    "module": "NodeNext",
+    "declaration": true,
+    "declarationDir": "dist",
+    "strict": true
+  }
+}
