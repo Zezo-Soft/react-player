@@ -1,3 +1,4 @@
+import Hls from "hls.js";
 import { create } from "zustand";
 
 interface VideoState {
@@ -11,6 +12,10 @@ interface VideoState {
   setControls: (controls: boolean) => void;
   currentTime: number;
   setCurrentTime: (currentTime: number) => void;
+  hlsInstance?: Hls;
+  setHlsInstance: (hlsInstance: Hls) => void;
+  qualityLevels?: Hls["levels"];
+  setQualityLevels: (qualityLevels: Hls["levels"]) => void;
 }
 
 export const useVideoStore = create<VideoState>((set) => ({
@@ -24,4 +29,8 @@ export const useVideoStore = create<VideoState>((set) => ({
   setControls: (controls) => set({ controls }),
   currentTime: 0,
   setCurrentTime: (currentTime) => set({ currentTime }),
+  hlsInstance: undefined,
+  setHlsInstance: (hlsInstance) => set({ hlsInstance }),
+  qualityLevels: undefined,
+  setQualityLevels: (qualityLevels) => set({ qualityLevels }),
 }));

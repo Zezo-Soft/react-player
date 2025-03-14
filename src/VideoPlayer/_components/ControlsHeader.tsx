@@ -1,21 +1,21 @@
 import * as React from "react";
-import { Maximize, Shrink, Volume2, VolumeOff, X } from "lucide-react";
+import {
+  Maximize,
+  Settings,
+  Shrink,
+  Volume2,
+  VolumeOff,
+  X,
+} from "lucide-react";
 import Tooltip from "../../components/ui/tooltip";
 import { useVideoStore } from "../../store/VideoState";
+import { IControlsHeaderProps } from "../../types";
+import Popover from "../../components/ui/Popover";
 
-interface IControlsHeaderProps {
-  onClose?: () => void;
-  title?: string;
-  isTrailer?: boolean;
-}
-
-const ControlsHeader: React.FC<IControlsHeaderProps> = ({
-  onClose,
-  title,
-  isTrailer,
-}) => {
+const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const className = "w-5 h-5 lg:w-8 lg:h-8";
-  const { videoWrapperRef, videoRef } = useVideoStore();
+  const { videoWrapperRef, videoRef, qualityLevels, hlsInstance } =
+    useVideoStore();
   const handleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -41,11 +41,36 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({
   return (
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
       <div>
-        {title && <h1 className="text-white lg:text-2xl font-bold">{title}</h1>}
-        {isTrailer && <h1 className="text-white lg:text-lg">Trailer</h1>}
+        {config?.title && (
+          <h1 className="text-white lg:text-2xl font-bold">{config.title}</h1>
+        )}
+        {config?.isTrailer && (
+          <h1 className="text-white lg:text-lg">Trailer</h1>
+        )}
       </div>
 
       <div className="flex items-center gap-7 text-white">
+        <div>
+          <Tooltip title="Settings">
+            <Popover button={<Settings className={className} />}>
+              <div className="bg-white text-black">
+                {qualityLevels?.map((level, index) => (
+                  <p
+                    key={index}
+                    onClick={() => {
+                      if (hlsInstance) {
+                        hlsInstance.currentLevel = index;
+                      }
+                    }}
+                    className="p-2 cursor-pointer hover:bg-gray-200"
+                  >
+                    {level.height}
+                  </p>
+                ))}
+              </div>
+            </Popover>
+          </Tooltip>
+        </div>
         <div onClick={handleMute}>
           {videoRef?.muted ? (
             <Tooltip title="Unmute">
@@ -69,7 +94,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({
           )}
         </div>
         <div className="w-[2px] h-10 bg-white mx-1" />
-        <div onClick={onClose && onClose}>
+        <div>
           <Tooltip title="Close">
             <X className={className} />
           </Tooltip>

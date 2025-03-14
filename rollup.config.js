@@ -15,6 +15,7 @@ export default defineConfig({
     "zustand",
     "react-video-seek-slider",
     "lucide-react",
+    "hls.js",
   ],
   plugins: [
     typescript({ tsconfig: "tsconfig.json" }),

@@ -7,7 +7,9 @@ const MiddleControls: React.FC = () => {
   const handlePlayPause = () => {
     if (!videoRef) return;
     if (videoRef.paused) {
-      videoRef.play();
+      videoRef
+        .play()
+        .catch((error) => console.error("Error playing video:", error));
       setIsPlaying(true);
     } else {
       videoRef.pause();
@@ -52,9 +54,7 @@ const MiddleControls: React.FC = () => {
         className="w-[10vw] flex justify-center items-center h-full cursor-pointer"
         onClick={handlePlayPause}
       >
-        {videoRef?.readyState === 0 ? (
-          <Loader className="size-10 animate-spin" />
-        ) : isPlaying ? (
+        {isPlaying ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={playPauseIconSize}

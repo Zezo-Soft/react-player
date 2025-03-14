@@ -15,7 +15,7 @@ const BottomControls: React.FC<IBottomControlsProps> = ({
 }) => {
   const { videoRef, currentTime } = useVideoStore();
   const duration = videoRef?.duration;
-  const bufferTime = videoRef?.buffered.end(0);
+  const bufferTime = 0;
 
   //   const previewImage = useRef("");
   //   const updatePreviewImage = (hoverTime: number) => {

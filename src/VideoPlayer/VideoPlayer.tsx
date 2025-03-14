@@ -1,29 +1,100 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./_components/Overlay";
+import Hls from "hls.js";
 
-const VideoPlayer = () => {
-  const { setVideoRef, setCurrentTime, setVideoWrapperRef } = useVideoStore();
+interface Props {
+  trackSrc: string;
+  trackTitle?: string;
+  trackPoster?: string;
+  isTrailer?: boolean;
+  className?: string;
+  type?: "hls" | "mp4" | "other";
+  width?: string;
+  height?: string;
+}
+
+const VideoPlayer: React.FC<Props> = ({
+  trackSrc,
+  trackTitle,
+  trackPoster,
+  isTrailer,
+  className,
+  type,
+  height,
+  width,
+}) => {
+  const {
+    setVideoRef,
+    setCurrentTime,
+    setVideoWrapperRef,
+    videoRef,
+    setQualityLevels,
+    setHlsInstance,
+  } = useVideoStore();
   const onRightClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     e.preventDefault();
   };
 
+  useEffect(() => {
+    if (!videoRef) {
+      return;
+    }
+
+    if (type === "mp4") {
+      videoRef.src = trackSrc;
+    } else if (type === "hls") {
+      if (videoRef?.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native HLS support (Safari)
+        videoRef.src = trackSrc;
+      } else if (Hls.isSupported()) {
+        // Use hls.js for other browsers
+        const hls = new Hls();
+        hls.loadSource(trackSrc);
+        hls.attachMedia(videoRef as HTMLMediaElement);
+        setHlsInstance(hls);
+        // Get quality levels when HLS loads
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setQualityLevels(hls.levels);
+        });
+
+        return () => {
+          hls.destroy(); // Cleanup on unmount
+        };
+      }
+    } else {
+      videoRef.src = trackSrc;
+    }
+  }, [trackSrc, videoRef]);
+
   return (
-    <div ref={setVideoWrapperRef} className="w-fit h-fit mx-auto relative">
+    <div
+      ref={setVideoWrapperRef}
+      className={`${height || "h-full"} ${width || "w-full"} mx-auto relative`}
+    >
       <video
         ref={setVideoRef}
-        className="w-full h-full"
-        poster="https://i.ytimg.com/vi/FB8gESo9EVs/maxresdefault.jpg"
-        src="https://res.cloudinary.com/dm4uaqlio/video/upload/v1727263375/Teri_Baaton_Mein___Shahid_Kapoor_Kriti_Sanon___Full_Hindi_Video_Songs_in_8K___4K_Ultra_HD_HDR_tuqfei.mp4"
+        className={`w-full h-full ${className}`}
+        poster={trackPoster}
         onContextMenu={onRightClick}
-        // On currunt time update
         onTimeUpdate={(e) => {
           if (e?.currentTarget?.currentTime) {
             setCurrentTime(e?.currentTarget?.currentTime);
           }
         }}
       />
-      <Overlay />
+      <Overlay
+        height={height}
+        width={width}
+        config={{
+          headerConfig: {
+            config: {
+              isTrailer: isTrailer,
+              title: trackTitle,
+            },
+          },
+        }}
+      />
     </div>
   );
 };

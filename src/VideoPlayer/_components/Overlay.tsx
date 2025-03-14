@@ -2,8 +2,9 @@ import * as React from "react";
 import { useCallback, useRef } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import VideoPlayerControls from "./VideoPlayerControls";
+import { IPlayerConfig } from "../../types";
 
-const Overlay = () => {
+const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setControls, controls } = useVideoStore();
   const handleMouseEnter = useCallback(() => {
@@ -29,7 +30,7 @@ const Overlay = () => {
       className="absolute inset-0"
       onMouseMove={handleMouseEnter}
     >
-      {controls && <VideoPlayerControls />}
+      {controls && <VideoPlayerControls config={config} />}
     </div>
   );
 };
