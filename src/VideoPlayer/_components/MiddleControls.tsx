@@ -25,6 +25,9 @@ const MiddleControls: React.FC = () => {
     videoRef.currentTime += 10;
   };
 
+  const nextAndPrevIconSize = "size-10 lg:size-12";
+  const playPauseIconSize = "size-10 lg:size-15";
+
   return (
     <div className="flex justify-center items-center">
       <div
@@ -33,7 +36,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="lg:w-16 lg:h-16 w-8 h-8"
+          className={nextAndPrevIconSize}
           fill="none"
           viewBox="0 0 67 67"
         >
@@ -50,11 +53,11 @@ const MiddleControls: React.FC = () => {
         onClick={handlePlayPause}
       >
         {videoRef?.readyState === 0 ? (
-          <Loader className="lg:w-16 lg:h-16 w-8 h-8 animate-spin" />
+          <Loader className="size-10 animate-spin" />
         ) : isPlaying ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="lg:w-16 lg:h-16 w-8 h-8"
+            className={playPauseIconSize}
             fill="none"
             viewBox="0 0 67 67"
           >
@@ -68,6 +71,7 @@ const MiddleControls: React.FC = () => {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
+            className={playPauseIconSize}
             width="67"
             height="67"
             fill="none"
@@ -86,7 +90,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="lg:w-16 lg:h-16 w-8 h-8"
+          className={nextAndPrevIconSize}
           fill="none"
           viewBox="0 0 67 67"
         >

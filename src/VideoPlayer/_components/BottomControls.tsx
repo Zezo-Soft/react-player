@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import { VideoSeekSlider } from "react-video-seek-slider";
 import "react-video-seek-slider/styles.css";
 import { secondsToMilliseconds, timeFormat } from "../utils";

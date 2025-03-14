@@ -1,5 +1,4 @@
-import * as React from "react";
-import "../index.css";
+import React from "react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./_components/Overlay";
 

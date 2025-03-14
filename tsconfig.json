@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "moduleResolution": "nodenext",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "jsx": "react",
     "target": "ES2020",
-    "module": "NodeNext",
     "declaration": true,
     "declarationDir": "dist",
     "strict": true
