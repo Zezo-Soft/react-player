@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  Check,
   Maximize,
   Settings,
   Shrink,
@@ -14,8 +15,14 @@ import Popover from "../../components/ui/Popover";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const className = "w-5 h-5 lg:w-8 lg:h-8";
-  const { videoWrapperRef, videoRef, qualityLevels, hlsInstance } =
-    useVideoStore();
+  const {
+    videoWrapperRef,
+    videoRef,
+    qualityLevels,
+    hlsInstance,
+    setActiveQuality,
+    activeQuality,
+  } = useVideoStore();
   const handleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -53,20 +60,38 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         <div>
           <Tooltip title="Settings">
             <Popover button={<Settings className={className} />}>
-              <div className="bg-white text-black">
-                {qualityLevels?.map((level, index) => (
+              <div className="text-black">
+                <div>
+                  <p className="p-2 font-bold">Quality</p>
                   <p
-                    key={index}
                     onClick={() => {
                       if (hlsInstance) {
-                        hlsInstance.currentLevel = index;
+                        hlsInstance.currentLevel = -1;
+                        setActiveQuality("auto");
                       }
                     }}
-                    className="p-2 cursor-pointer hover:bg-gray-200"
+                    className="p-2 cursor-pointer flex items-center gap-1.5"
                   >
-                    {level.height}
+                    {activeQuality === "auto" && <Check />} Auto
                   </p>
-                ))}
+                  {qualityLevels
+                    ?.map((level, index) => (
+                      <p
+                        key={index}
+                        onClick={() => {
+                          if (hlsInstance) {
+                            hlsInstance.currentLevel = index;
+                            setActiveQuality(String(level.height));
+                          }
+                        }}
+                        className="p-2 cursor-pointer flex items-center gap-1.5"
+                      >
+                        {activeQuality === String(level.height) && <Check />}{" "}
+                        {level.height}p
+                      </p>
+                    ))
+                    .reverse()}
+                </div>
               </div>
             </Popover>
           </Tooltip>
@@ -93,12 +118,16 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
             </Tooltip>
           )}
         </div>
-        <div className="w-[2px] h-10 bg-white mx-1" />
-        <div>
-          <Tooltip title="Close">
-            <X className={className} />
-          </Tooltip>
-        </div>
+        {config?.onClose && (
+          <>
+            <div className="w-[2px] h-10 bg-white mx-1" />
+            <div onClick={config.onClose}>
+              <Tooltip title="Close">
+                <X className={className} />
+              </Tooltip>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,76 +1,31 @@
 import React from "react";
-import { VideoSeekSlider } from "react-video-seek-slider";
-import "react-video-seek-slider/styles.css";
 import { secondsToMilliseconds, timeFormat } from "../utils";
 import { useVideoStore } from "../../store/VideoState";
+import { VideoSeekSlider } from "./TimeLine/TimeLine";
+import "./TimeLine/time-line.css";
+import { IControlsBottomProps } from "../../types";
 
-interface IBottomControlsProps {
-  onChange?: (currentTime: number) => void;
-  isFullscreen?: boolean;
-}
-
-const BottomControls: React.FC<IBottomControlsProps> = ({
-  onChange,
-  isFullscreen,
-}) => {
-  const { videoRef, currentTime } = useVideoStore();
+const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
+  const { videoRef, currentTime, isFullscreen } = useVideoStore();
   const duration = videoRef?.duration;
   const bufferTime = 0;
 
-  //   const previewImage = useRef("");
-  //   const updatePreviewImage = (hoverTime: number) => {
-  //     const url = `https://via.placeholder.com/140x60?text=${hoverTime}`;
-  //     const image = document.createElement("img");
-  //     image.src = url;
-
-  //     image.onload = () => {
-  //       previewImage.current = url;
-  //     };
-  //   };
-
-  //   const handleGettingPreview = useCallback(
-  //     (hoverTime: number) => {
-  //       // FIND AND RETURN LOADED!!! VIDEO PREVIEW ACCORDING TO the hoverTime TIME
-  //       console.log({ hoverTime, duration });
-  //       updatePreviewImage(hoverTime);
-
-  //       return previewImage.current;
-  //     },
-  //     [duration]
-  //   );
   return (
     <div className="px-10 text-white">
       <VideoSeekSlider
         max={secondsToMilliseconds(duration || 0)}
         currentTime={secondsToMilliseconds(currentTime || 0)}
         bufferTime={secondsToMilliseconds(bufferTime || 0)}
-        onChange={(currentTime: number) => onChange && onChange(currentTime)}
+        onChange={(currentTime: number) => {
+          if (videoRef) {
+            videoRef.currentTime = currentTime / 1000;
+          }
+        }}
         secondsPrefix="00:00:"
         minutesPrefix="00:"
-
-        // getPreviewScreenUrl={handleGettingPreview}
-        // timeCodes={[
-        //   {
-        //     fromMs: 0,
-        //     description: "This is a very logn first part label you could use",
-        //   },
-        //   {
-        //     fromMs: 130000,
-        //     description: "This is the second part",
-        //   },
-        //   {
-        //     fromMs: 270000,
-        //     description: "One more part label",
-        //   },
-        //   {
-        //     fromMs: 440000,
-        //     description: "Final battle",
-        //   },
-        //   {
-        //     fromMs: 600000,
-        //     description: "Cast ",
-        //   },
-        // ]}
+        getPreviewScreenUrl={config?.seekBarConfig?.getPreviewScreenUrl}
+        timeCodes={config?.seekBarConfig?.timeCodes}
+        trackColor={config?.seekBarConfig?.trackColor}
       />
       <div
         className={`pt-6 ${

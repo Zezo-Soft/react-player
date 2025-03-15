@@ -16,6 +16,12 @@ interface VideoState {
   setHlsInstance: (hlsInstance: Hls) => void;
   qualityLevels?: Hls["levels"];
   setQualityLevels: (qualityLevels: Hls["levels"]) => void;
+  activeQuality?: string;
+  setActiveQuality: (activeQuality: string) => void;
+  isFullscreen?: boolean;
+  setIsFullscreen: (isFullscreen: boolean) => void;
+  duration?: number;
+  setDuration: (duration: number) => void;
 }
 
 export const useVideoStore = create<VideoState>((set) => ({
@@ -33,4 +39,10 @@ export const useVideoStore = create<VideoState>((set) => ({
   setHlsInstance: (hlsInstance) => set({ hlsInstance }),
   qualityLevels: undefined,
   setQualityLevels: (qualityLevels) => set({ qualityLevels }),
+  activeQuality: "auto",
+  setActiveQuality: (activeQuality) => set({ activeQuality }),
+  isFullscreen: false,
+  setIsFullscreen: (isFullscreen) => set({ isFullscreen }),
+  duration: 0,
+  setDuration: (duration) => set({ duration }),
 }));

@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./_components/Overlay";
 import Hls from "hls.js";
+import { getExtensionFromUrl } from "./utils";
+import { TimeCode } from "./_components/TimeLine/TimeLine";
 
 interface Props {
   trackSrc: string;
@@ -12,6 +14,8 @@ interface Props {
   type?: "hls" | "mp4" | "other";
   width?: string;
   height?: string;
+  timeCodes?: TimeCode[];
+  getPreviewScreenUrl?: (hoverTimeValue: number) => string;
 }
 
 const VideoPlayer: React.FC<Props> = ({
@@ -23,6 +27,8 @@ const VideoPlayer: React.FC<Props> = ({
   type,
   height,
   width,
+  timeCodes,
+  getPreviewScreenUrl,
 }) => {
   const {
     setVideoRef,
@@ -31,6 +37,7 @@ const VideoPlayer: React.FC<Props> = ({
     videoRef,
     setQualityLevels,
     setHlsInstance,
+    setDuration,
   } = useVideoStore();
   const onRightClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     e.preventDefault();
@@ -41,9 +48,12 @@ const VideoPlayer: React.FC<Props> = ({
       return;
     }
 
-    if (type === "mp4") {
+    const getVideoExtension = getExtensionFromUrl(trackSrc);
+    const contentType = type || getVideoExtension;
+    if (contentType === "mp4") {
       videoRef.src = trackSrc;
-    } else if (type === "hls") {
+      setQualityLevels([]);
+    } else if (contentType === "hls") {
       if (videoRef?.canPlayType("application/vnd.apple.mpegurl")) {
         // Native HLS support (Safari)
         videoRef.src = trackSrc;
@@ -64,6 +74,7 @@ const VideoPlayer: React.FC<Props> = ({
       }
     } else {
       videoRef.src = trackSrc;
+      setQualityLevels([]);
     }
   }, [trackSrc, videoRef]);
 
@@ -82,6 +93,11 @@ const VideoPlayer: React.FC<Props> = ({
             setCurrentTime(e?.currentTarget?.currentTime);
           }
         }}
+        onLoad={(e) => {
+          if (e?.currentTarget?.duration) {
+            setDuration(e?.currentTarget?.duration);
+          }
+        }}
       />
       <Overlay
         height={height}
@@ -91,6 +107,15 @@ const VideoPlayer: React.FC<Props> = ({
             config: {
               isTrailer: isTrailer,
               title: trackTitle,
+            },
+          },
+          bottomConfig: {
+            config: {
+              seekBarConfig: {
+                timeCodes: timeCodes,
+                trackColor: "white",
+                getPreviewScreenUrl,
+              },
             },
           },
         }}

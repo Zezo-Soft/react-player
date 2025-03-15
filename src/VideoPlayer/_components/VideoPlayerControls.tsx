@@ -17,7 +17,7 @@ const VideoPlayerControls: React.FC<IPlayerConfig> = ({
     >
       <ControlsHeader config={config?.headerConfig?.config} />
       <MiddleControls />
-      <BottomControls />
+      <BottomControls config={config?.bottomConfig?.config} />
     </div>
   );
 };

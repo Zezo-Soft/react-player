@@ -53,3 +53,16 @@ export const secondsToMilliseconds = (seconds: number) => {
 export const millisecondsToSeconds = (milliseconds: number) => {
   return milliseconds / 1000;
 };
+
+/**
+ * @description get extension from url
+ * @param url
+ * @returns string | undefined
+ */
+export const getExtensionFromUrl = (url: string) => {
+  const extension = url?.split(".")?.pop();
+  if (extension === "m3u8") {
+    return "hls";
+  }
+  return extension;
+};
