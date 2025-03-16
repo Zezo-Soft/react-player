@@ -1,6 +1,6 @@
 {
   "name": "@zezosoft/react-player",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "dist/index.js",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -12,6 +12,10 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zezo-Soft/react-player"
+  },
   "keywords": [
     "video",
     "player",
@@ -21,8 +25,10 @@
     "react-video",
     "react-video-player",
     "react-video-component",
-    "react-video-component",
-    "react-video-component"
+    "ZezoOTT",
+    "Zezo",
+    "Zezosoft",
+    "streaming"
   ],
   "author": "Pukhraj Dhamu",
   "license": "MIT",
