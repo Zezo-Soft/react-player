@@ -1,6 +1,6 @@
 {
-  "name": "zezo-react-player",
-  "version": "0.0.4",
+  "name": "@zezosoft/react-player",
+  "version": "0.0.2",
   "main": "dist/index.js",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -26,7 +26,7 @@
   ],
   "author": "Pukhraj Dhamu",
   "license": "MIT",
-  "description": "",
+  "description": "A lightweight and customizable video player by Zezosoft, built for seamless streaming with advanced controls, adaptive playback, and modern UI. Perfect for web and React applications.",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@tailwindcss/postcss": "^4.0.14",
