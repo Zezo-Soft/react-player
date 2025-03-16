@@ -47,10 +47,6 @@ export const HoverTimeWithPreview: React.FC<Props> = ({
     secondsPrefix
   );
 
-  console.log({
-    url: getPreviewScreenUrl && `url(${getPreviewScreenUrl(hoverTimeValue)})`,
-  });
-
   return (
     <div
       className={hoverTimeClassName}

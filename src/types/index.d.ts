@@ -28,3 +28,7 @@ export interface IPlayerConfig {
     bottomConfig?: IControlsBottomProps;
   };
 }
+
+export interface IOnWatchTimeUpdated {
+  watchTime: number;
+}

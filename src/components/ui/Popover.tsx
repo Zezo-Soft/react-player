@@ -29,7 +29,7 @@ const Popover = ({
     <div className="relative inline-block" ref={popoverRef}>
       <div onClick={() => setIsOpen(!isOpen)}>{button}</div>
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-64 bg-white shadow-lg rounded-lg border border-gray-200 z-50 p-4">
+        <div className="absolute left-0 mt-2 w-fit bg-white shadow-lg rounded-lg border border-gray-200 z-50 p-4">
           {children}
         </div>
       )}
