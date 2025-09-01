@@ -6,26 +6,33 @@ import { getExtensionFromUrl } from "./utils";
 import { TimeCode } from "./_components/TimeLine/TimeLine";
 import { IOnWatchTimeUpdated } from "../types";
 
-interface Props {
+export interface Props {
   trackSrc: string;
   trackTitle?: string;
   trackPoster?: string;
   isTrailer?: boolean;
   className?: string;
-  type?: "hls" | "mp4" | "other";
+  type?: "hls" | "mp4" | "other" | "youtube" | undefined;
   width?: string;
   height?: string;
+  onClose?: () => void;
   timeCodes?: TimeCode[];
   getPreviewScreenUrl?: (hoverTimeValue: number) => string;
   tracking?: {
     onViewed?: () => void;
     onWatchTimeUpdated?: (e: IOnWatchTimeUpdated) => void;
   };
+  subtitles?: {
+    lang: string;
+    label: string;
+    url: string;
+  }[];
 }
 
 const VideoPlayer: React.FC<Props> = ({
   trackSrc,
   trackTitle,
+  onClose,
   trackPoster,
   isTrailer,
   className,
@@ -35,6 +42,7 @@ const VideoPlayer: React.FC<Props> = ({
   timeCodes,
   getPreviewScreenUrl,
   tracking,
+  subtitles,
 }) => {
   const {
     setVideoRef,
@@ -45,7 +53,10 @@ const VideoPlayer: React.FC<Props> = ({
     setHlsInstance,
     setDuration,
     setIsPlaying,
+    activeSubtitle,
+    setSubtitles,
   } = useVideoStore();
+
   const onRightClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     e.preventDefault();
   };
@@ -62,21 +73,18 @@ const VideoPlayer: React.FC<Props> = ({
       setQualityLevels([]);
     } else if (contentType === "hls") {
       if (videoRef?.canPlayType("application/vnd.apple.mpegurl")) {
-        // Native HLS support (Safari)
         videoRef.src = trackSrc;
       } else if (Hls.isSupported()) {
-        // Use hls.js for other browsers
         const hls = new Hls();
         hls.loadSource(trackSrc);
         hls.attachMedia(videoRef as HTMLMediaElement);
         setHlsInstance(hls);
-        // Get quality levels when HLS loads
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setQualityLevels(hls.levels);
         });
 
         return () => {
-          hls.destroy(); // Cleanup on unmount
+          hls.destroy();
         };
       }
     } else {
@@ -85,7 +93,46 @@ const VideoPlayer: React.FC<Props> = ({
     }
   }, [trackSrc, videoRef]);
 
-  // Analytics Start
+  useEffect(() => {
+    if (videoRef) {
+      const tracks = videoRef.getElementsByTagName("track");
+      while (tracks.length > 0) {
+        videoRef.removeChild(tracks[0]);
+      }
+
+      Array.from(videoRef.textTracks).forEach((track) => {
+        track.mode = "disabled";
+      });
+
+      if (activeSubtitle && subtitles) {
+        const index = subtitles.findIndex(
+          (s) => s.label === activeSubtitle.label
+        );
+        if (index !== -1) {
+          const trackElement = document.createElement("track");
+          trackElement.kind = "subtitles";
+          trackElement.label = activeSubtitle.label;
+          trackElement.srclang = activeSubtitle.lang;
+          trackElement.src = activeSubtitle.url;
+          trackElement.default = false;
+          videoRef.appendChild(trackElement);
+
+          const textTrack = Array.from(videoRef.textTracks).find(
+            (track) => track.label === activeSubtitle.label
+          );
+          if (textTrack) {
+            textTrack.mode = "showing";
+            console.log("Subtitle track activated:", activeSubtitle.label);
+          }
+        }
+      } else {
+        Array.from(videoRef.textTracks).forEach((track) => {
+          track.mode = "disabled";
+        });
+      }
+    }
+  }, [activeSubtitle, videoRef, subtitles]);
+
   const startTime = useRef<number | null>(null);
   const isViewCounted = useRef(false);
 
@@ -152,36 +199,43 @@ const VideoPlayer: React.FC<Props> = ({
     };
   }, [startTime]);
 
+  useEffect(() => {
+    if (subtitles) {
+      setSubtitles(subtitles);
+    }
+  }, [subtitles]);
+
   return (
     <div
       ref={setVideoWrapperRef}
-      className={`${height || "h-full"} ${width || "w-full"} mx-auto relative`}
+      className={`${height || "h-full"} ${width || "w-full"} mx-auto absolute`}
     >
       <video
         ref={setVideoRef}
-        className={`w-full h-full ${className}`}
+        className={`w-full h-full relative ${className} [&::cue]:absolute 
+  [&::cue]:top-[10%] 
+  [&::cue]:text-xl 
+  [&::cue]:bg-gray-50 
+  [&::cue]:text-[#1E1E1E] 
+  [&::cue]:px-2 
+  [&::cue]:py-1 
+  [&::cue]:rounded-md`}
         poster={trackPoster}
+        autoPlay
+        crossOrigin="anonymous"
         onContextMenu={onRightClick}
         onTimeUpdate={(e) => {
           if (e?.currentTarget?.currentTime) {
             setCurrentTime(e?.currentTarget?.currentTime);
           }
         }}
-        onLoad={(e) => {
+        onLoadedMetadata={(e) => {
           if (e?.currentTarget?.duration) {
             localStorage.setItem("current_time", "0");
             setDuration(e?.currentTarget?.duration);
           }
         }}
-      >
-        <track
-          kind="captions"
-          srcLang="en"
-          label="English"
-          default
-          src="https://res.cloudinary.com/dm4uaqlio/raw/upload/v1742096015/sintel-captions-en_ehel5s.vtt"
-        />
-      </video>
+      ></video>
       <Overlay
         height={height}
         width={width}
@@ -190,13 +244,16 @@ const VideoPlayer: React.FC<Props> = ({
             config: {
               isTrailer: isTrailer,
               title: trackTitle,
+              onClose: onClose,
+              // videoRef: videoRef,
+              videoRef: videoRef as any,
             },
           },
           bottomConfig: {
             config: {
               seekBarConfig: {
                 timeCodes: timeCodes,
-                trackColor: "white",
+                trackColor: "red",
                 getPreviewScreenUrl,
               },
             },

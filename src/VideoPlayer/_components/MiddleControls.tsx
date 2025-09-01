@@ -3,7 +3,7 @@ import React from "react";
 import { useVideoStore } from "../../store/VideoState";
 
 const MiddleControls: React.FC = () => {
-  const { videoRef, isPlaying, setIsPlaying } = useVideoStore();
+  const { videoRef, isPlaying, setIsPlaying, isBuffering } = useVideoStore();
   const handlePlayPause = () => {
     if (!videoRef) return;
     if (videoRef.paused) {
@@ -27,9 +27,6 @@ const MiddleControls: React.FC = () => {
     videoRef.currentTime += 10;
   };
 
-  const nextAndPrevIconSize = "size-10 lg:size-12";
-  const playPauseIconSize = "size-10 lg:size-15";
-
   return (
     <div className="flex justify-center items-center">
       <div
@@ -38,7 +35,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={nextAndPrevIconSize}
+          className="lg:w-16 lg:h-16 w-8 h-8"
           fill="none"
           viewBox="0 0 67 67"
         >
@@ -51,13 +48,17 @@ const MiddleControls: React.FC = () => {
         </svg>
       </div>
       <div
-        className="w-[10vw] flex justify-center items-center h-full cursor-pointer"
         onClick={handlePlayPause}
+        className="w-[10vw] flex justify-center items-center h-full cursor-pointer"
       >
-        {isPlaying ? (
+        {isBuffering ? (
+          <Loader className="lg:w-16 lg:h-16 w-8 h-8 animate-spin" />
+        ) : isPlaying ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={playPauseIconSize}
+            // width="67"
+            // height="67"
+            className="lg:w-16 lg:h-16 w-8 h-8"
             fill="none"
             viewBox="0 0 67 67"
           >
@@ -71,7 +72,6 @@ const MiddleControls: React.FC = () => {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={playPauseIconSize}
             width="67"
             height="67"
             fill="none"
@@ -90,7 +90,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={nextAndPrevIconSize}
+          className="lg:w-16 lg:h-16 w-8 h-8"
           fill="none"
           viewBox="0 0 67 67"
         >

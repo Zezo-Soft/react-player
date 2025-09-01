@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 interface VideoState {
   videoRef: HTMLVideoElement | null;
+  isBuffering?: boolean;
   setVideoRef: (ref: HTMLVideoElement) => void;
   videoWrapperRef: HTMLDivElement | null;
   setVideoWrapperRef: (ref: HTMLDivElement) => void;
@@ -22,6 +23,14 @@ interface VideoState {
   setIsFullscreen: (isFullscreen: boolean) => void;
   duration?: number;
   setDuration: (duration: number) => void;
+  activeSubtitle?: { lang: string; label: string; url: string } | null;
+  setActiveSubtitle: (
+    subtitle: { lang: string; label: string; url: string } | null
+  ) => void;
+  subtitles?: { lang: string; label: string; url: string }[];
+  setSubtitles: (
+    subtitles: { lang: string; label: string; url: string }[]
+  ) => void;
 }
 
 export const useVideoStore = create<VideoState>((set) => ({
@@ -45,4 +54,8 @@ export const useVideoStore = create<VideoState>((set) => ({
   setIsFullscreen: (isFullscreen) => set({ isFullscreen }),
   duration: 0,
   setDuration: (duration) => set({ duration }),
+  activeSubtitle: null,
+  setActiveSubtitle: (subtitle) => set({ activeSubtitle: subtitle }),
+  subtitles: [],
+  setSubtitles: (subtitles) => set({ subtitles }),
 }));
