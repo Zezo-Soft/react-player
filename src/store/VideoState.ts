@@ -4,6 +4,7 @@ import { create } from "zustand";
 interface VideoState {
   videoRef: HTMLVideoElement | null;
   isBuffering?: boolean;
+  setIsBuffering: (isBuffering: boolean) => void;
   setVideoRef: (ref: HTMLVideoElement) => void;
   videoWrapperRef: HTMLDivElement | null;
   setVideoWrapperRef: (ref: HTMLDivElement) => void;
@@ -35,6 +36,7 @@ interface VideoState {
 
 export const useVideoStore = create<VideoState>((set) => ({
   videoRef: null,
+  setIsBuffering: (isBuffering) => set({ isBuffering }),
   setVideoRef: (ref) => set({ videoRef: ref }),
   videoWrapperRef: null,
   setVideoWrapperRef: (ref) => set({ videoWrapperRef: ref }),

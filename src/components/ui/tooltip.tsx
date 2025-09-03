@@ -5,6 +5,7 @@ interface TooltipProps {
   children: React.ReactNode;
   title: string;
   position?: "top" | "bottom" | "left" | "right";
+  className?: string;
 }
 
 const Tooltip: React.FC<TooltipProps> = ({

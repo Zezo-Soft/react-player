@@ -1,16 +1,20 @@
 import * as React from "react";
-import { IoMdClose } from "react-icons/io";
-import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { FaCheck } from "react-icons/fa";
+import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
+
 import Tooltip from "../../components/ui/tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { IControlsHeaderProps } from "../../types";
 import Popover from "../../components/ui/Popover";
 import FullScreenToggle from "./FullScreenToggle";
 import { Settings } from "lucide-react";
+import PiPictureInPictureToggle from "./PiPictureInPictureToggle";
+import { IoMdClose } from "react-icons/io";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
-  const className = "w-5 h-5 lg:w-8 lg:h-8";
+  const iconClassName =
+    "w-5 h-5 lg:w-8 lg:h-8 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+
   const {
     videoWrapperRef,
     videoRef,
@@ -24,6 +28,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   } = useVideoStore();
 
   const handleFullscreen = () => {
+    if (isPipActive) return;
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
@@ -40,6 +45,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       if (videoRef) videoRef.muted = true;
     }
   };
+
   const [speed, setSpeed] = React.useState(1);
 
   const handleSpeedChange = (newSpeed: number) => {
@@ -49,23 +55,61 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     }
   };
 
-  React.useEffect(() => {}, [subtitles, activeSubtitle]);
+  // PiP Mode State and Handler
+  const [isPipActive, setIsPipActive] = React.useState(false);
+
+  const handlePipToggle = async () => {
+    if (videoRef) {
+      if (!document.pictureInPictureElement && !isPipActive) {
+        try {
+          await videoRef.requestPictureInPicture();
+          setIsPipActive(true);
+        } catch (error) {
+          console.error("PiP mode failed:", error);
+        }
+      } else if (document.pictureInPictureElement && isPipActive) {
+        try {
+          await document.exitPictureInPicture();
+          setIsPipActive(false);
+        } catch (error) {
+          console.error("Exit PiP failed:", error);
+        }
+      }
+    }
+  };
+
+  // Event listener for PiP changes
+  React.useEffect(() => {
+    const handlePipChange = () => {
+      setIsPipActive(!!document.pictureInPictureElement);
+    };
+    document.addEventListener("enterpictureinpicture", handlePipChange);
+    document.addEventListener("leavepictureinpicture", handlePipChange);
+    return () => {
+      document.removeEventListener("enterpictureinpicture", handlePipChange);
+      document.removeEventListener("leavepictureinpicture", handlePipChange);
+    };
+  }, []);
 
   return (
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
       <div>
         {config?.title && (
-          <h1 className="text-white lg:text-2xl font-bold">{config.title}</h1>
+          <h1 className="text-gray-200 text-base lg:text-xl font-semibold">
+            {config.title}
+          </h1>
         )}
         {config?.isTrailer && (
-          <h1 className="text-white lg:text-lg">Trailer</h1>
+          <h1 className="text-gray-200 text-sm lg:text-base font-normal">
+            Trailer
+          </h1>
         )}
       </div>
 
       <div className="flex items-center gap-7 text-white">
         <div>
           <Tooltip title="Settings">
-            <Popover button={<Settings className={className} />}>
+            <Popover button={<Settings className={iconClassName} />}>
               <div className="text-black">
                 <div>
                   <p className="p-2 font-bold">Quality</p>
@@ -142,28 +186,47 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         <div onClick={handleMute}>
           {videoRef?.muted ? (
             <Tooltip title="Unmute">
-              <IoVolumeMuteOutline className={className} />
+              <IoVolumeMuteOutline className={iconClassName} />
             </Tooltip>
           ) : (
             <Tooltip title="Mute">
-              <IoVolumeHighOutline className={className} />
+              <IoVolumeHighOutline className={iconClassName} />
             </Tooltip>
           )}
         </div>
-        <Tooltip title={isFullscreen ? "Exit" : "Fullscreen"}>
-          <div onClick={handleFullscreen}>
+        <Tooltip
+          title={
+            isPipActive
+              ? "Disabled in PiP"
+              : isFullscreen
+              ? "Exit"
+              : "Fullscreen"
+          }
+          className={`${iconClassName} ${
+            isPipActive ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          <div
+            onClick={handleFullscreen}
+            className={isPipActive ? "pointer-events-none" : ""}
+          >
             <FullScreenToggle
               isFullScreen={isFullscreen}
-              className={className}
+              className={iconClassName}
             />
+          </div>
+        </Tooltip>
+        <Tooltip title={isPipActive ? "Exit PiP" : "Enter PiP"}>
+          <div onClick={handlePipToggle}>
+            <PiPictureInPictureToggle className={iconClassName} />
           </div>
         </Tooltip>
         {config?.onClose && (
           <>
-            <div className="w-[2px] h-10 bg-white mx-1" />
+            <div className="w-[2px] h-10 bg-gray-500 hover:bg-gray-300 transition-colors duration-200 mx-2" />
             <div onClick={config.onClose}>
               <Tooltip title="Close">
-                <IoMdClose className={className} />
+                <IoMdClose className={iconClassName} />
               </Tooltip>
             </div>
           </>

@@ -11,7 +11,7 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
   const bufferTime = 0;
 
   return (
-    <div className="px-10 text-white">
+    <div className="px-10">
       <VideoSeekSlider
         max={secondsToMilliseconds(duration || 0)}
         currentTime={secondsToMilliseconds(currentTime || 0)}
@@ -27,16 +27,22 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
         timeCodes={config?.seekBarConfig?.timeCodes}
         trackColor={config?.seekBarConfig?.trackColor}
       />
+
       <div
-        className={`pt-6 ${
-          isFullscreen ? "pb-10" : "pb-16"
-        } lg:pb-10 flex gap-2 items-center`}
+        className={`pt-5 ${
+          isFullscreen ? "pb-8" : "pb-12"
+        } lg:pb-10 flex items-center gap-2 text-white`}
       >
-        <p className="lg:text-xl font-semibold">
+        <span className="text-base lg:text-2xl font-semibold text-white">
           {timeFormat(currentTime || 0)}
-        </p>{" "}
-        <p className="lg:text-2xl">/</p>{" "}
-        <p className="lg:text-xl font-semibold">{timeFormat(duration || 0)}</p>
+        </span>
+        <span className="text-base lg:text-2xl font-semibold text-gray-500">
+          /
+        </span>
+
+        <span className="text-base lg:text-2xl font-semibold text-gray-400">
+          {timeFormat(duration || 0)}
+        </span>
       </div>
     </div>
   );
