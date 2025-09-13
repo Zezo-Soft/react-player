@@ -29,18 +29,17 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
       />
 
       <div
-        className={`pt-5 ${
-          isFullscreen ? "pb-8" : "pb-12"
-        } lg:pb-10 flex items-center gap-2 text-white`}
+        className={`pt-6 ${
+          isFullscreen ? "pb-10" : "pb-16"
+        } lg:pb-12 flex items-center gap-4 text-white`}
       >
-        <span className="text-base lg:text-2xl font-semibold text-white">
+        <span className="text-lg lg:text-3xl font-semibold text-white cursor-pointer hover:text-gray-200 transition-colors duration-200">
           {timeFormat(currentTime || 0)}
         </span>
-        <span className="text-base lg:text-2xl font-semibold text-gray-500">
+        <span className="text-lg lg:text-3xl font-semibold text-gray-500 cursor-pointer hover:text-gray-200 transition-colors duration-200">
           /
         </span>
-
-        <span className="text-base lg:text-2xl font-semibold text-gray-400">
+        <span className="text-lg lg:text-3xl font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors duration-200">
           {timeFormat(duration || 0)}
         </span>
       </div>

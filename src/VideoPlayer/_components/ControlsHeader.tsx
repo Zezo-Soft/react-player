@@ -1,7 +1,6 @@
 import * as React from "react";
 import { FaCheck } from "react-icons/fa";
 import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
-
 import Tooltip from "../../components/ui/tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { IControlsHeaderProps } from "../../types";
@@ -13,7 +12,7 @@ import { IoMdClose } from "react-icons/io";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const iconClassName =
-    "w-5 h-5 lg:w-8 lg:h-8 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+    "w-6 h-6 lg:w-10 lg:h-10 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
 
   const {
     videoWrapperRef,

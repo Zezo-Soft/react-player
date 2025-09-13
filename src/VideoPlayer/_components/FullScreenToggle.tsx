@@ -7,7 +7,7 @@ interface FullScreenToggleProps {
 }
 
 const iconClassName =
-  "w-3.7 h-3.7 lg:w-7 lg:h-7 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+  "w-5 h-5 lg:w-8 lg:h-8 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
 
 const FullScreenToggle: React.FC<FullScreenToggleProps> = ({
   isFullScreen,

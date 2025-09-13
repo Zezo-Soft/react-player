@@ -13,7 +13,7 @@ const VideoPlayerControls: React.FC<IPlayerConfig> = ({
     <div
       className={`absolute top-0 left-0 ${height || "h-full"} ${
         width || "w-full"
-      } bg-[rgba(0,0,0,0.5)] flex flex-col justify-between`}
+      } bg-[rgba(0,0,0,0.5)] flex flex-col justify-between px-24`}
     >
       <ControlsHeader config={config?.headerConfig?.config} />
       <MiddleControls />

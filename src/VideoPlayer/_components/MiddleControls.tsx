@@ -3,7 +3,7 @@ import { Loader } from "lucide-react";
 import { useVideoStore } from "../../store/VideoState";
 
 const iconClasses =
-  "lg:w-18 lg:h-18 w-10 h-10 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+  "w-16 h-16 lg:w-24 lg:h-24 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
 
 const MiddleControls: React.FC = () => {
   const { videoRef, isPlaying, setIsPlaying, isBuffering, setIsBuffering } =
@@ -77,7 +77,7 @@ const MiddleControls: React.FC = () => {
         className="w-[10vw] flex justify-center items-center h-full cursor-pointer"
       >
         {isBuffering ? (
-          <Loader className="lg:w-28 lg:h-28 w-20 h-20 animate-spin text-white" />
+          <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
         ) : isPlaying ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
