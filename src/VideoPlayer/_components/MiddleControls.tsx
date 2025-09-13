@@ -3,7 +3,7 @@ import { Loader } from "lucide-react";
 import { useVideoStore } from "../../store/VideoState";
 
 const iconClasses =
-  "w-16 h-16 lg:w-24 lg:h-24 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+  "w-16 h-16 lg:w-20 lg:h-20 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
 
 const MiddleControls: React.FC = () => {
   const { videoRef, isPlaying, setIsPlaying, isBuffering, setIsBuffering } =
@@ -52,6 +52,40 @@ const MiddleControls: React.FC = () => {
       videoRef.removeEventListener("playing", handlePlaying);
     };
   }, [videoRef, setIsBuffering]);
+
+  useEffect(() => {
+    if (!videoRef) return;
+    const handleWaiting = () => setIsBuffering(true);
+    const handlePlaying = () => setIsBuffering(false);
+    videoRef.addEventListener("waiting", handleWaiting);
+    videoRef.addEventListener("playing", handlePlaying);
+
+    return () => {
+      videoRef.removeEventListener("waiting", handleWaiting);
+      videoRef.removeEventListener("playing", handlePlaying);
+    };
+  }, [videoRef, setIsBuffering]);
+
+  //  keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!videoRef) return;
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          handlePlayPause();
+          break;
+        case "ArrowLeft":
+          handleBackword();
+          break;
+        case "ArrowRight":
+          handleForword();
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [videoRef, isPlaying]);
 
   return (
     <div className="flex justify-center items-center">
