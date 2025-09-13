@@ -112,74 +112,112 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         <div>
           <Tooltip title="Settings">
             <Popover button={<Settings className={iconClassName} />}>
-              <div className="text-black">
-                <div>
-                  <p className="p-2 font-bold">Quality</p>
-                  <p
-                    onClick={() => {
-                      if (hlsInstance) {
-                        hlsInstance.currentLevel = -1;
-                        setActiveQuality("auto");
-                      }
-                    }}
-                    className="p-2 cursor-pointer flex items-center gap-1.5"
-                  >
-                    {activeQuality === "auto" && <FaCheck />} Auto
+              <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-xl shadow-xl w-56 p-2">
+                {/* Quality Section */}
+                <div className="mb-2">
+                  <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
+                    Quality
                   </p>
-                  {qualityLevels
-                    ?.map((level, index) => (
-                      <p
-                        key={index}
-                        onClick={() => {
-                          if (hlsInstance) {
-                            hlsInstance.currentLevel = index;
-                            setActiveQuality(String(level.height));
-                          }
-                        }}
-                        className="p-2 cursor-pointer flex items-center gap-1.5"
-                      >
-                        {activeQuality === String(level.height) && <FaCheck />}{" "}
-                        {level.height}p
-                      </p>
-                    ))
-                    .reverse()}
-                </div>
-                <div>
-                  <p className="p-2 font-bold">Subtitles</p>
-                  <p
-                    onClick={() => {
-                      setActiveSubtitle(null);
-                      console.log("Subtitle set to Off");
-                    }}
-                    className="p-2 cursor-pointer flex items-center gap-1.5"
-                  >
-                    {!activeSubtitle && <FaCheck />} Off
-                  </p>
-                  {subtitles?.map((subtitle, index) => (
-                    <p
-                      key={index}
+                  <div className="flex flex-col gap-1">
+                    <button
                       onClick={() => {
-                        setActiveSubtitle(subtitle);
-                        console.log("Subtitle selected:", subtitle.label);
+                        if (hlsInstance) {
+                          hlsInstance.currentLevel = -1;
+                          setActiveQuality("auto");
+                        }
                       }}
-                      className="p-2 cursor-pointer flex items-center gap-1.5"
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                        activeQuality === "auto"
+                          ? "bg-green-100 font-semibold"
+                          : ""
+                      }`}
                     >
-                      {activeSubtitle?.label === subtitle.label && <FaCheck />}{" "}
-                      {subtitle.label}
-                    </p>
-                  ))}
+                      {activeQuality === "auto" && (
+                        <FaCheck className="text-green-500" />
+                      )}
+                      Auto
+                    </button>
+                    {qualityLevels
+                      ?.map((level, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            if (hlsInstance) {
+                              hlsInstance.currentLevel = index;
+                              setActiveQuality(String(level.height));
+                            }
+                          }}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                            activeQuality === String(level.height)
+                              ? "bg-green-100 font-semibold"
+                              : ""
+                          }`}
+                        >
+                          {activeQuality === String(level.height) && (
+                            <FaCheck className="text-green-500" />
+                          )}
+                          {level.height}p
+                        </button>
+                      ))
+                      .reverse()}
+                  </div>
                 </div>
-                <div>
-                  <p className="p-2 font-bold">Speed</p>
-                  {[0.5, 1, 1.5, 2].map((s) => (
-                    <p
-                      key={s}
-                      onClick={() => handleSpeedChange(s)}
-                      className="p-2 cursor-pointer flex items-center gap-1.5"
+
+                {/* Subtitles Section */}
+                <div className="mb-2">
+                  <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
+                    Subtitles
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => setActiveSubtitle(null)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                        !activeSubtitle ? "bg-green-100 font-semibold" : ""
+                      }`}
                     >
-                      {speed === s && <FaCheck />} {s}x
-                    </p>
-                  ))}
+                      {!activeSubtitle && (
+                        <FaCheck className="text-green-500" />
+                      )}
+                      Off
+                    </button>
+                    {subtitles?.map((subtitle, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActiveSubtitle(subtitle)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                          activeSubtitle?.label === subtitle.label
+                            ? "bg-green-100 font-semibold"
+                            : ""
+                        }`}
+                      >
+                        {activeSubtitle?.label === subtitle.label && (
+                          <FaCheck className="text-green-500" />
+                        )}
+                        {subtitle.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Speed Section */}
+                <div>
+                  <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
+                    Speed
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {[0.5, 1, 1.5, 2].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => handleSpeedChange(s)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                          speed === s ? "bg-green-100 font-semibold" : ""
+                        }`}
+                      >
+                        {speed === s && <FaCheck className="text-green-500" />}
+                        {s}x
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </Popover>
