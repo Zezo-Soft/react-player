@@ -93,7 +93,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 
   return (
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
-      <div>
+      <div className="flex">
+        {/* <div>
         {config?.title && (
           <h1 className="text-gray-200 text-base lg:text-xl font-semibold">
             {config.title}
@@ -104,6 +105,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
             Trailer
           </h1>
         )}
+      </div> */}
       </div>
 
       <div className="flex items-center gap-7 text-white">
