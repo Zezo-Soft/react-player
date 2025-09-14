@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./_components/Overlay";
 import Hls from "hls.js";
@@ -27,11 +27,18 @@ export interface Props {
     label: string;
     url: string;
   }[];
+
+  // 👇 New intro prop
+  intro?: {
+    start: number;
+    end: number;
+  };
 }
 
 const VideoPlayer: React.FC<Props> = ({
   trackSrc,
   trackTitle,
+  intro,
   onClose,
   trackPoster,
   isTrailer,
@@ -57,17 +64,19 @@ const VideoPlayer: React.FC<Props> = ({
     setSubtitles,
   } = useVideoStore();
 
+  const [showSkipIntro, setShowSkipIntro] = useState(false);
+
   const onRightClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     e.preventDefault();
   };
 
+  // === VIDEO SOURCE INIT ===
   useEffect(() => {
-    if (!videoRef) {
-      return;
-    }
+    if (!videoRef) return;
 
     const getVideoExtension = getExtensionFromUrl(trackSrc);
     const contentType = type || getVideoExtension;
+
     if (contentType === "mp4") {
       videoRef.src = trackSrc;
       setQualityLevels([]);
@@ -93,6 +102,7 @@ const VideoPlayer: React.FC<Props> = ({
     }
   }, [trackSrc, videoRef]);
 
+  // === SUBTITLES ===
   useEffect(() => {
     if (videoRef) {
       const tracks = videoRef.getElementsByTagName("track");
@@ -133,41 +143,45 @@ const VideoPlayer: React.FC<Props> = ({
     }
   }, [activeSubtitle, videoRef, subtitles]);
 
+  // === TRACKING (play/pause/watchtime) ===
   const startTime = useRef<number | null>(null);
   const isViewCounted = useRef(false);
 
   useEffect(() => {
-    if (videoRef) {
-      videoRef.addEventListener("play", () => {
-        if (!isViewCounted.current) {
-          isViewCounted.current = true;
-          if (tracking?.onViewed) {
-            tracking.onViewed();
-          }
-        }
-        startTime.current = Date.now();
-        setIsPlaying(true);
-      });
-      videoRef.addEventListener("pause", () => {
-        if (startTime.current) {
-          const elapsedTime = (Date.now() - startTime.current) / 1000;
-          const getCurrentTime = localStorage.getItem("current_time");
-          localStorage.setItem(
-            "current_time",
-            (Number(getCurrentTime || 0) + elapsedTime).toString()
-          );
-          startTime.current = null;
-        }
-        setIsPlaying(false);
-      });
+    if (!videoRef) return;
 
-      return () => {
-        videoRef.removeEventListener("play", () => {});
-        videoRef.removeEventListener("pause", () => {});
-      };
-    }
+    const onPlay = () => {
+      if (!isViewCounted.current) {
+        isViewCounted.current = true;
+        tracking?.onViewed?.();
+      }
+      startTime.current = Date.now();
+      setIsPlaying(true);
+    };
+
+    const onPause = () => {
+      if (startTime.current) {
+        const elapsedTime = (Date.now() - startTime.current) / 1000;
+        const getCurrentTime = localStorage.getItem("current_time");
+        localStorage.setItem(
+          "current_time",
+          (Number(getCurrentTime || 0) + elapsedTime).toString()
+        );
+        startTime.current = null;
+      }
+      setIsPlaying(false);
+    };
+
+    videoRef.addEventListener("play", onPlay);
+    videoRef.addEventListener("pause", onPause);
+
+    return () => {
+      videoRef.removeEventListener("play", onPlay);
+      videoRef.removeEventListener("pause", onPause);
+    };
   }, [videoRef]);
 
+  // === BEFORE UNLOAD ===
   const handleUnload = (e: BeforeUnloadEvent) => {
     e.preventDefault();
     if (startTime.current) {
@@ -181,11 +195,9 @@ const VideoPlayer: React.FC<Props> = ({
 
     const totalTimeWatched = Number(localStorage.getItem("current_time") || 0);
     if (totalTimeWatched >= 30) {
-      if (tracking?.onWatchTimeUpdated) {
-        tracking.onWatchTimeUpdated({
-          watchTime: totalTimeWatched,
-        });
-      }
+      tracking?.onWatchTimeUpdated?.({
+        watchTime: totalTimeWatched,
+      });
     }
     localStorage.setItem("current_time", "0");
   };
@@ -204,6 +216,34 @@ const VideoPlayer: React.FC<Props> = ({
       setSubtitles(subtitles);
     }
   }, [subtitles]);
+
+  // === INTRO LOGIC ===
+  useEffect(() => {
+    if (!videoRef || !intro) return;
+
+    const checkIntro = () => {
+      if (
+        videoRef.currentTime >= intro.start &&
+        videoRef.currentTime < intro.end
+      ) {
+        setShowSkipIntro(true);
+      } else {
+        setShowSkipIntro(false);
+      }
+    };
+
+    videoRef.addEventListener("timeupdate", checkIntro);
+    return () => {
+      videoRef.removeEventListener("timeupdate", checkIntro);
+    };
+  }, [videoRef, intro]);
+
+  const handleSkipIntro = () => {
+    if (videoRef && intro) {
+      videoRef.currentTime = intro.end;
+      setShowSkipIntro(false);
+    }
+  };
 
   return (
     <div
@@ -236,16 +276,15 @@ const VideoPlayer: React.FC<Props> = ({
           }
         }}
       ></video>
+
+      {/* Overlay UI */}
       <Overlay
-        height={height}
-        width={width}
         config={{
           headerConfig: {
             config: {
               isTrailer: isTrailer,
               title: trackTitle,
               onClose: onClose,
-              // videoRef: videoRef,
               videoRef: videoRef as any,
             },
           },
@@ -260,6 +299,19 @@ const VideoPlayer: React.FC<Props> = ({
           },
         }}
       />
+      {/* Skip Intro Button */}
+      {showSkipIntro && (
+        <button
+          onClick={handleSkipIntro}
+          className="absolute bottom-36 left-32
+               bg-black/60 text-white px-6 py-2 
+               rounded-md text-sm font-medium
+               backdrop-blur-sm
+               hover:bg-black/70 transition"
+        >
+          Skip Intro
+        </button>
+      )}
     </div>
   );
 };
