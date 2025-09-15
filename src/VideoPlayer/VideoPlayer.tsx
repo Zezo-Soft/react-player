@@ -27,12 +27,13 @@ export interface Props {
     label: string;
     url: string;
   }[];
-
-  // 👇 New intro prop
+  episodeList?: { id: number; title: string; url: string }[];
+  currentEpisodeIndex?: number;
   intro?: {
     start: number;
     end: number;
   };
+  nextEpisodeConfig?: { showAtTime?: number; showAtEnd?: boolean };
 }
 
 const VideoPlayer: React.FC<Props> = ({
@@ -50,6 +51,9 @@ const VideoPlayer: React.FC<Props> = ({
   getPreviewScreenUrl,
   tracking,
   subtitles,
+  episodeList,
+  currentEpisodeIndex = 0,
+  nextEpisodeConfig,
 }) => {
   const {
     setVideoRef,
@@ -62,6 +66,9 @@ const VideoPlayer: React.FC<Props> = ({
     setIsPlaying,
     activeSubtitle,
     setSubtitles,
+    setEpisodeList,
+    setCurrentEpisodeIndex,
+    setShowCountdown,
   } = useVideoStore();
 
   const [showSkipIntro, setShowSkipIntro] = useState(false);
@@ -172,14 +179,31 @@ const VideoPlayer: React.FC<Props> = ({
       setIsPlaying(false);
     };
 
+    const onEnded = () => {
+      if (
+        episodeList &&
+        episodeList.length > 0 &&
+        currentEpisodeIndex !== undefined
+      ) {
+        const nextIndex = currentEpisodeIndex + 1;
+        if (nextIndex < episodeList.length) {
+          setShowCountdown(true);
+        } else if (onClose) {
+          onClose();
+        }
+      }
+    };
+
     videoRef.addEventListener("play", onPlay);
     videoRef.addEventListener("pause", onPause);
+    videoRef.addEventListener("ended", onEnded);
 
     return () => {
       videoRef.removeEventListener("play", onPlay);
       videoRef.removeEventListener("pause", onPause);
+      videoRef.removeEventListener("ended", onEnded);
     };
-  }, [videoRef]);
+  }, [videoRef, episodeList, currentEpisodeIndex, onClose]);
 
   // === BEFORE UNLOAD ===
   const handleUnload = (e: BeforeUnloadEvent) => {
@@ -215,7 +239,13 @@ const VideoPlayer: React.FC<Props> = ({
     if (subtitles) {
       setSubtitles(subtitles);
     }
-  }, [subtitles]);
+    if (episodeList) {
+      setEpisodeList(episodeList);
+    }
+    if (currentEpisodeIndex !== undefined) {
+      setCurrentEpisodeIndex(currentEpisodeIndex);
+    }
+  }, [subtitles, episodeList, currentEpisodeIndex]);
 
   // === INTRO LOGIC ===
   useEffect(() => {
@@ -245,6 +275,32 @@ const VideoPlayer: React.FC<Props> = ({
     }
   };
 
+  // === NEXT EPISODE LOGIC (Backend Dependent) ===
+  useEffect(() => {
+    if (!videoRef || !nextEpisodeConfig) return;
+
+    const checkNextEpisode = () => {
+      const currentTime = videoRef.currentTime || 0;
+
+      // Show based on backend config
+      if (nextEpisodeConfig.showAtEnd && videoRef.ended) {
+        setShowCountdown(true);
+      } else if (
+        nextEpisodeConfig.showAtTime &&
+        currentTime >= nextEpisodeConfig.showAtTime
+      ) {
+        setShowCountdown(true);
+      }
+    };
+
+    videoRef.addEventListener("timeupdate", checkNextEpisode);
+    videoRef.addEventListener("ended", checkNextEpisode);
+    return () => {
+      videoRef.removeEventListener("timeupdate", checkNextEpisode);
+      videoRef.removeEventListener("ended", checkNextEpisode);
+    };
+  }, [videoRef, nextEpisodeConfig]);
+
   return (
     <div
       ref={setVideoWrapperRef}
@@ -253,7 +309,7 @@ const VideoPlayer: React.FC<Props> = ({
       <video
         ref={setVideoRef}
         className={`w-full h-full relative ${className} [&::cue]:absolute 
-  [&::cue]:top-[10%] 
+  [&::cue]:top-[6%] 
   [&::cue]:text-xl 
   [&::cue]:bg-gray-50 
   [&::cue]:text-[#1E1E1E] 
@@ -304,10 +360,13 @@ const VideoPlayer: React.FC<Props> = ({
         <button
           onClick={handleSkipIntro}
           className="absolute bottom-36 left-32
-               bg-black/60 text-white px-6 py-2 
-               rounded-md text-sm font-medium
-               backdrop-blur-sm
-               hover:bg-black/70 transition"
+             bg-white/60 text-gray-900 px-6 py-2 
+             rounded-[6px] text-sm font-medium
+             backdrop-blur-sm
+             hover:bg-white/80
+             transition
+             shadow-lg
+             focus:outline-none focus:ring-2 focus:ring-white/50"
         >
           Skip Intro
         </button>
