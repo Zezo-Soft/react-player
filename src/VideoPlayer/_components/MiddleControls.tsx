@@ -3,7 +3,7 @@ import { Loader } from "lucide-react";
 import { useVideoStore } from "../../store/VideoState";
 
 const iconClasses =
-  "w-16 h-16 lg:w-20 lg:h-20 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+  "w-14 h-14 lg:w-18 lg:h-18 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
 
 const MiddleControls: React.FC = () => {
   const { videoRef, isPlaying, setIsPlaying, isBuffering, setIsBuffering } =

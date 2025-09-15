@@ -13,7 +13,10 @@ const PiPictureInPictureToggle: React.FC<PiPictureInPictureToggleProps> = ({
   className,
 }) => {
   return (
-    <div onClick={onClick}>
+    <div
+      onClick={onClick}
+      className="text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
