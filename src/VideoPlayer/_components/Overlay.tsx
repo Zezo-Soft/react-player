@@ -36,7 +36,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       if (videoPlayerControls) {
         videoPlayerControls.classList.add("noCursor");
       }
-    }, 3000);
+    }, 2000);
   }, [setControls]);
 
   React.useEffect(() => {
@@ -98,18 +98,20 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     >
       {controls && <VideoPlayerControls config={config} />}
 
-      {showCountdown && episodeList.length > 0 && (
-        <div className="absolute bottom-36 flex justify-end w-full right-32">
-          <button
-            onClick={handleNextEpisodeManually}
-            disabled={currentEpisodeIndex + 1 >= episodeList.length}
-            className="bg-white/60 text-gray-900 px-6 py-2 rounded-[5px] text-sm font-medium backdrop-blur-sm hover:bg-white/80 transition shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-white/40"
-          >
-            <FaGooglePlay className="inline mr-2 text-black" />
-            Next Episode
-          </button>
-        </div>
-      )}
+      {showCountdown &&
+        episodeList.length > 0 &&
+        currentEpisodeIndex + 1 < episodeList.length && (
+          <div className="absolute bottom-36 flex justify-end w-full right-32">
+            <button
+              onClick={handleNextEpisodeManually}
+              disabled={currentEpisodeIndex + 1 >= episodeList.length}
+              className="bg-white/60 text-gray-900 px-6 py-2 rounded-[5px] text-sm font-medium backdrop-blur-sm hover:bg-white/80 transition shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-white/40"
+            >
+              <FaGooglePlay className="inline mr-2 text-black" />
+              Next Episode
+            </button>
+          </div>
+        )}
     </div>
   );
 };

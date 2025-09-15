@@ -191,6 +191,8 @@ const VideoPlayer: React.FC<Props> = ({
         } else if (onClose) {
           onClose();
         }
+      } else if (onClose) {
+        onClose();
       }
     };
 
