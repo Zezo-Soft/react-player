@@ -361,7 +361,7 @@ const VideoPlayer: React.FC<Props> = ({
           onClick={handleSkipIntro}
           className="absolute bottom-36 left-32
              bg-white/60 text-gray-900 px-6 py-2 
-             rounded-[6px] text-sm font-medium
+             rounded-[5px] text-sm font-medium
              backdrop-blur-sm
              hover:bg-white/80
              transition
