@@ -4,6 +4,7 @@ import { useVideoStore } from "../../store/VideoState";
 import VideoPlayerControls from "./VideoPlayerControls";
 import { IPlayerConfig } from "../../types";
 import { FaGooglePlay } from "react-icons/fa";
+import VideoActionButton from "../../components/ui/VideoActionButton";
 
 const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,16 +102,13 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       {showCountdown &&
         episodeList.length > 0 &&
         currentEpisodeIndex + 1 < episodeList.length && (
-          <div className="absolute bottom-36 flex justify-end w-full right-32">
-            <button
-              onClick={handleNextEpisodeManually}
-              disabled={currentEpisodeIndex + 1 >= episodeList.length}
-              className="bg-white/60 text-gray-900 px-6 py-2 rounded-[5px] text-sm font-medium backdrop-blur-sm hover:bg-white/80 transition shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-white/40"
-            >
-              <FaGooglePlay className="inline mr-2 text-black" />
-              Next Episode
-            </button>
-          </div>
+          <VideoActionButton
+            text="Next Episode"
+            onClick={handleNextEpisodeManually}
+            icon={<FaGooglePlay className="text-black" />}
+            disabled={currentEpisodeIndex + 1 >= episodeList.length}
+            position="right"
+          />
         )}
     </div>
   );

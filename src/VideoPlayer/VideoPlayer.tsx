@@ -5,6 +5,7 @@ import Hls from "hls.js";
 import { getExtensionFromUrl } from "./utils";
 import { TimeCode } from "./_components/TimeLine/TimeLine";
 import { IOnWatchTimeUpdated } from "../types";
+import VideoActionButton from "../components/ui/VideoActionButton";
 
 export interface Props {
   trackSrc: string;
@@ -359,19 +360,11 @@ const VideoPlayer: React.FC<Props> = ({
       />
       {/* Skip Intro Button */}
       {showSkipIntro && (
-        <button
+        <VideoActionButton
+          text="Skip Intro"
           onClick={handleSkipIntro}
-          className="absolute bottom-36 left-32
-             bg-white/60 text-gray-900 px-6 py-2 
-             rounded-[5px] text-sm font-medium
-             backdrop-blur-sm
-             hover:bg-white/80
-             transition
-             shadow-lg
-             focus:outline-none focus:ring-2 focus:ring-white/50"
-        >
-          Skip Intro
-        </button>
+          position="left"
+        />
       )}
     </div>
   );
