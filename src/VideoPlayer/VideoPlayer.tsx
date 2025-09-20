@@ -317,7 +317,7 @@ const VideoPlayer: React.FC<Props> = ({
   [&::cue]:bg-gray-50 
   [&::cue]:text-[#1E1E1E] 
   [&::cue]:px-2 
-  [&::cue]:py-1 
+  [&::cue]:py-1  
   [&::cue]:rounded-md`}
         poster={trackPoster}
         autoPlay

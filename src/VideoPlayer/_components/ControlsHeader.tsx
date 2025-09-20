@@ -5,9 +5,9 @@ import Tooltip from "../../components/ui/tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { IControlsHeaderProps } from "../../types";
 import Popover from "../../components/ui/Popover";
-import FullScreenToggle from "./FullScreenToggle";
+import FullScreenToggle from "../../components/ui/FullScreenToggle";
 import { Settings } from "lucide-react";
-import PiPictureInPictureToggle from "./PiPictureInPictureToggle";
+import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureToggle";
 import { IoMdClose } from "react-icons/io";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
