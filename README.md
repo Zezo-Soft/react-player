@@ -1,6 +1,6 @@
 # @zezosoft/react-player 🎬
 
-A powerful and flexible **React video player** by **Zezosoft**, supporting HLS, MP4, preview thumbnails, tracking, and advanced playback controls.
+A powerful and flexible **React video player** by **Zezosoft**, supporting HLS, MP4, preview thumbnails, tracking, subtitles, episode playback, and advanced controls.
 
 ---
 
@@ -10,13 +10,16 @@ A powerful and flexible **React video player** by **Zezosoft**, supporting HLS, 
 ✅ **Preview Thumbnails on Hover**  
 ✅ **Event Tracking (Views, Watch Time, etc.)**  
 ✅ **Customizable Player Size & Controls**  
-✅ **Time-Stamped Labels for Video Chapters**
+✅ **Time-Stamped Labels for Video Chapters**  
+✅ **Subtitles (WebVTT)**  
+✅ **Intro Skipping**  
+✅ **Next Episode Auto Play and Button**
 
 ---
 
 ## 📦 Installation
 
-Install the package using **npm** or **yarn**:
+Install the package using **npm**
 
 ```sh
 npm install @zezosoft/react-player
@@ -35,7 +38,6 @@ import { VideoPlayer } from "@zezosoft/react-player";
 function App() {
   const previewImage = useRef("");
 
-  // Generate dynamic preview images based on hover time
   const updatePreviewImage = (hoverTime: number) => {
     const url = `https://fakeimg.pl/720x405?text=${hoverTime}`;
     const image = document.createElement("img");
@@ -68,6 +70,25 @@ function App() {
           onViewed: () => console.log("Video Viewed"),
           onWatchTimeUpdated: (e) => console.log("Watch Time Updated", e),
         }}
+        subtitles={[
+          {
+            lang: "en",
+            label: "English",
+            url: "https://example.com/subtitles-en.vtt",
+          },
+          {
+            lang: "hi",
+            label: "Hindi",
+            url: "https://example.com/subtitles-hi.vtt",
+          },
+        ]}
+        episodeList={[
+          { id: 1, title: "Episode 1", url: "https://example.com/ep1.m3u8" },
+          { id: 2, title: "Episode 2", url: "https://example.com/ep2.m3u8" },
+        ]}
+        currentEpisodeIndex={0}
+        intro={{ start: 5, end: 20 }}
+        nextEpisodeConfig={{ showAtTime: 300, showAtEnd: true }}
       />
     </div>
   );
@@ -80,33 +101,40 @@ export default App;
 
 ## 🎨 Props Reference
 
-| Prop Name             | Type                                             | Default  | Description                                             |
-| --------------------- | ------------------------------------------------ | -------- | ------------------------------------------------------- |
-| `trackPoster`         | `string`                                         | `""`     | URL of the video poster image.                          |
-| `trackSrc`            | `string`                                         | `""`     | Video source URL (MP4, HLS, etc.).                      |
-| `trackTitle`          | `string`                                         | `""`     | Title of the video.                                     |
-| `isTrailer`           | `boolean`                                        | `false`  | Specifies if the video is a trailer.                    |
-| `width`               | `string`                                         | `"100%"` | Width of the video player.                              |
-| `height`              | `string`                                         | `"auto"` | Height of the video player.                             |
-| `timeCodes`           | `Array<{ fromMs: number, description: string }>` | `[]`     | List of time-based markers with descriptions.           |
-| `getPreviewScreenUrl` | `(timeMs: number) => string`                     | `null`   | Function to generate preview screen URLs based on time. |
-| `tracking`            | `object`                                         | `{}`     | Tracking event callbacks.                               |
+| Prop Name             | Type                                                  | Default     | Description                                                |
+| --------------------- | ----------------------------------------------------- | ----------- | ---------------------------------------------------------- |
+| `trackPoster`         | `string`                                              | `""`        | URL of the video poster image.                             |
+| `trackSrc`            | `string`                                              | `""`        | Video source URL (MP4, HLS, etc.).                         |
+| `trackTitle`          | `string`                                              | `""`        | Title of the video.                                        |
+| `isTrailer`           | `boolean`                                             | `false`     | Specifies if the video is a trailer.                       |
+| `width`               | `string`                                              | `"100%"`    | Width of the video player.                                 |
+| `height`              | `string`                                              | `"auto"`    | Height of the video player.                                |
+| `timeCodes`           | `Array<{ fromMs: number, description: string }>`      | `[]`        | List of time-based markers with descriptions.              |
+| `getPreviewScreenUrl` | `(timeMs: number) => string`                          | `null`      | Function to generate preview screen URLs based on time.    |
+| `tracking`            | `object`                                              | `{}`        | Tracking event callbacks.                                  |
+| `subtitles`           | `Array<{ lang: string; label: string; url: string }>` | `[]`        | Subtitle tracks in WebVTT format.                          |
+| `episodeList`         | `Array<{ id: number; title: string; url: string }>`   | `[]`        | List of episodes to support autoplay/playlist.             |
+| `currentEpisodeIndex` | `number`                                              | `0`         | Index of currently playing episode.                        |
+| `intro`               | `{ start: number; end: number }`                      | `undefined` | Defines intro duration in seconds.                         |
+| `nextEpisodeConfig`   | `{ showAtTime?: number; showAtEnd?: boolean }`        | `undefined` | When to show next episode UI — at specific time or at end. |
+|                       |
 
 ---
 
 ## 📢 Tracking Events
 
-| Event Name           | Description                               |
-| -------------------- | ----------------------------------------- |
-| `onViewed`           | Triggered when the video is viewed.       |
-| `onWatchTimeUpdated` | Triggered when the watch time is updated. |
+| Event Name           | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `onViewed`           | Triggered when the video starts playing.         |
+| `onWatchTimeUpdated` | Triggered when user leaves with >30s watch time. |
 
 #### Example usage:
 
 ```tsx
 tracking={{
-  onViewed: () => console.log("Video viewed"),
-  onWatchTimeUpdated: (e) => console.log("Current watch time:", e),
+  onViewed: () => console.log("Viewed!"),
+  onWatchTimeUpdated: ({ watchTime }) =>
+    console.log("Total watch time (sec):", watchTime),
 }}
 ```
 
@@ -139,9 +167,77 @@ Mark important video sections:
 ```tsx
 <VideoPlayer
   timeCodes={[
-    { fromMs: 0, description: "Introduction" },
-    { fromMs: 120000, description: "Key Scene" },
+    { fromMs: 0, description: "Intro" },
+    { fromMs: 120000, description: "Main Scene" },
   ]}
+/>
+```
+
+🔹 Subtitles Support
+
+Add support for multiple subtitle tracks in .vtt format:
+
+```tsx
+subtitles={[
+  {
+    lang: "en",
+    label: "English",
+    url: "https://example.com/subtitles-en.vtt",
+  },
+  {
+    lang: "fr",
+    label: "French",
+    url: "https://example.com/subtitles-fr.vtt",
+  },
+]}
+```
+
+🔹 Skip Intro Button
+
+Automatically show a "Skip Intro" button between a specific start and end time
+
+```tsx
+<VideoPlayer intro={{ start: 5, end: 20 }} />
+```
+
+🔹 Next Episode Playback
+
+Automatically show "Next Episode" option when video ends or reaches a set time
+
+```tsx
+<VideoPlayer
+  nextEpisodeConfig={{
+    showAtTime: 300,
+    showAtEnd: true,
+  }}
+/>
+```
+
+🔹 Episode Playlist Support
+
+Pass a playlist of episodes and control which one plays currently
+
+```tsx
+<VideoPlayer
+  episodeList={[
+    { id: 1, title: "Episode 1", url: "https://example.com/ep1.m3u8" },
+    { id: 2, title: "Episode 2", url: "https://example.com/ep2.m3u8" },
+  ]}
+  currentEpisodeIndex={0}
+/>
+```
+
+🔹 Tracking Events
+
+Track when the video is viewed or how much time was watched
+
+```tsx
+<VideoPlayer
+  tracking={{
+    onViewed: () => console.log("User viewed the video."),
+    onWatchTimeUpdated: ({ watchTime }) =>
+      console.log("Total watch time in seconds:", watchTime),
+  }}
 />
 ```
 
@@ -154,6 +250,11 @@ Mark important video sections:
 - Check if the `trackSrc` URL is correct.
 - Ensure the video format (MP4, HLS) is supported.
 - If using HLS, ensure you're serving files correctly (CORS issues may block playback).
+
+#### ❌ Subtitles not showing?
+
+- Check that .vtt files are correctly hosted and publicly accessible.
+- Ensure the subtitles prop includes proper lang, label, and url.
 
 #### ❌ Preview thumbnails not loading?
 
