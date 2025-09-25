@@ -9,7 +9,14 @@ export default defineConfig({
     format: "es",
     name: "zezo-react-player",
   },
-  external: ["react", "react-dom", "zustand", "lucide-react", "hls.js"],
+  external: [
+    "react",
+    "react-dom",
+    "zustand",
+    "lucide-react",
+    "hls.js",
+    "react-icons/io",
+  ],
   plugins: [
     typescript({ tsconfig: "tsconfig.json" }),
     postcss({

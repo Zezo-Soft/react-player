@@ -5,6 +5,9 @@ export interface IControlsHeaderProps {
     title?: string;
     isTrailer?: boolean;
     onClose?: () => void;
+    subtitles?: any[];
+    activeSubtitle?: { lang: string; label: string; url: string } | null;
+    videoRef?: any;
   };
 }
 
