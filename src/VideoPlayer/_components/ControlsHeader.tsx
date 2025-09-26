@@ -111,13 +111,14 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         <div>
           <Tooltip title="Settings">
             <Popover button={<Settings className={iconClassName} />}>
-              <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-xl shadow-xl w-56 p-2">
+              <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-md w-56 p-2">
                 {/* Quality Section */}
                 <div className="mb-2">
                   <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
                     Quality
                   </p>
                   <div className="flex flex-col gap-1">
+                    {/* Auto Option */}
                     <button
                       onClick={() => {
                         if (hlsInstance) {
@@ -136,8 +137,11 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                       )}
                       Auto
                     </button>
+
+                    {/* Filter out 0p levels */}
                     {qualityLevels
-                      ?.map((level, index) => (
+                      ?.filter((level) => level.height > 0)
+                      .map((level, index) => (
                         <button
                           key={index}
                           onClick={() => {

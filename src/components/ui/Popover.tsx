@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 interface PopoverProps {
   button: React.ReactNode;
   children: React.ReactNode;
-  closeOnButtonClick?: boolean; // new optional prop
+  closeOnButtonClick?: boolean;
+  className?: string;
 }
 
 const Popover: React.FC<PopoverProps> = ({

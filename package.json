@@ -35,9 +35,9 @@
   "description": "A lightweight and customizable video player by Zezosoft, built for seamless streaming with advanced controls, adaptive playback, and modern UI. Perfect for web and React applications.",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
-    "@tailwindcss/postcss": "^4.0.14",
-    "@types/react": "^19.0.10",
+    "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^24.4.0",
+    "@types/react": "^19.0.10",
     "hls.js": "^1.5.20",
     "lucide-react": "^0.481.0",
     "postcss": "^8.5.3",
@@ -45,7 +45,7 @@
     "react-dom": "^19.0.0",
     "rollup": "^4.35.0",
     "rollup-plugin-postcss": "^4.0.2",
-    "tailwindcss": "^4.0.14",
+    "tailwindcss": "^4.1.13",
     "tslib": "^2.8.1",
     "zustand": "^5.0.3"
   },
