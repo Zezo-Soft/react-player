@@ -6,6 +6,7 @@ import { getExtensionFromUrl } from "./utils";
 import { TimeCode } from "./_components/TimeLine/TimeLine";
 import { IOnWatchTimeUpdated } from "../types";
 import VideoActionButton from "../components/ui/VideoActionButton";
+import "../../src/index.css";
 
 export interface Props {
   trackSrc: string;

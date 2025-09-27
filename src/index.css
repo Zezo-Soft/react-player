@@ -3,3 +3,7 @@
 .noCursor {
   cursor: none !important;
 }
+
+.icon-class {
+  @apply w-14 h-14 lg:w-18 lg:h-18 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200;
+}
