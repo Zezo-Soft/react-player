@@ -84,6 +84,19 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     };
   }, []);
 
+  const uniqueQualityLevels = React.useMemo(() => {
+    if (!qualityLevels) return [];
+    const seenHeights = new Set<number>();
+    return qualityLevels.filter((level) => {
+      if (seenHeights.has(level.height)) {
+        return false;
+      } else {
+        seenHeights.add(level.height);
+        return true;
+      }
+    });
+  }, [qualityLevels]);
+
   return (
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
       <div className="flex">
@@ -106,7 +119,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         <div>
           <Tooltip title="Settings">
             <Popover button={<Settings className={iconClassName} />}>
-              <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-xl shadow-xl w-56 p-2">
+              <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-md w-56 p-2">
                 {/* Quality */}
                 <div className="mb-2">
                   <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
@@ -131,8 +144,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                       )}
                       Auto
                     </button>
-                    {qualityLevels
-                      ?.map((level, index) => (
+                    {uniqueQualityLevels
+                      .map((level, index) => (
                         <button
                           key={index}
                           onClick={() => {
