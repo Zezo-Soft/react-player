@@ -1,4 +1,5 @@
 import React from "react";
+import "../../VideoPlayer/_components/styles/video-controls.css";
 
 interface FullScreenToggleProps {
   isFullScreen: boolean;
@@ -6,12 +7,10 @@ interface FullScreenToggleProps {
   className?: string;
 }
 
-const iconClassName =
-  "w-5 h-5 lg:w-8 lg:h-8 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
-
 const FullScreenToggle: React.FC<FullScreenToggleProps> = ({
   isFullScreen,
   onClick,
+  className = "fullscreen-icon",
 }) => {
   return (
     <div onClick={onClick}>
@@ -19,7 +18,7 @@ const FullScreenToggle: React.FC<FullScreenToggleProps> = ({
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 25 25"
-          className={iconClassName}
+          className={className}
         >
           <path
             fill="currentColor"
@@ -32,7 +31,7 @@ const FullScreenToggle: React.FC<FullScreenToggleProps> = ({
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 25 25"
-          className={iconClassName}
+          className={className}
         >
           <path
             fill="currentColor"

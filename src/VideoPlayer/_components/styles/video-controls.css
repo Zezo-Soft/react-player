@@ -1,0 +1,61 @@
+.icon-button {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s ease-in-out;
+}
+
+.icon-button:hover {
+  color: #e5e7eb;
+}
+
+@media (min-width: 1024px) {
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* styles/fullscreen-toggle.css */
+.fullscreen-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s ease-in-out;
+}
+
+.fullscreen-icon:hover {
+  color: #e5e7eb;
+}
+
+@media (min-width: 1024px) {
+  .fullscreen-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* styles/pi-picture-in-picture-toggle.css */
+.pip-toggle {
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s ease-in-out;
+}
+
+.pip-toggle:hover {
+  color: #e5e7eb;
+}
+
+.pip-icon {
+  width: 15px;
+  height: 15px;
+}
+
+@media (min-width: 1024px) {
+  .pip-icon {
+    width: 28px;
+    height: 28px;
+  }
+}

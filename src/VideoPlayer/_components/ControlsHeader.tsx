@@ -9,10 +9,10 @@ import FullScreenToggle from "../../components/ui/FullScreenToggle";
 import { Settings } from "lucide-react";
 import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureToggle";
 import { IoMdClose } from "react-icons/io";
+import "../_components/styles/video-controls.css";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
-  const iconClassName =
-    "w-5 h-5 lg:w-8 lg:h-8 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
+  const iconClassName = "icon-button";
 
   const {
     videoWrapperRef,
@@ -26,6 +26,10 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     setActiveSubtitle,
   } = useVideoStore();
 
+  const [speed, setSpeed] = React.useState(1);
+  const [isPipActive, setIsPipActive] = React.useState(false);
+  const isFullscreen = document.fullscreenElement !== null;
+
   const handleFullscreen = () => {
     if (isPipActive) return;
     if (document.fullscreenElement) {
@@ -35,17 +39,11 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     }
   };
 
-  const isFullscreen = document.fullscreenElement !== null;
-
   const handleMute = () => {
-    if (videoRef?.muted) {
-      if (videoRef) videoRef.muted = false;
-    } else {
-      if (videoRef) videoRef.muted = true;
+    if (videoRef) {
+      videoRef.muted = !videoRef.muted;
     }
   };
-
-  const [speed, setSpeed] = React.useState(1);
 
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
@@ -53,9 +51,6 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       videoRef.playbackRate = newSpeed;
     }
   };
-
-  // PiP Mode State and Handler
-  const [isPipActive, setIsPipActive] = React.useState(false);
 
   const handlePipToggle = async () => {
     if (videoRef) {
@@ -77,7 +72,6 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     }
   };
 
-  // Event listener for PiP changes
   React.useEffect(() => {
     const handlePipChange = () => {
       setIsPipActive(!!document.pictureInPictureElement);
@@ -95,12 +89,12 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       <div className="flex">
         <div>
           {config?.title && (
-            <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
+            <h1 className="text-gray-200 text-xl lg:text-4xl font-bold">
               {config.title}
             </h1>
           )}
           {config?.isTrailer && (
-            <h1 className="text-gray-200 text-sm lg:text-base font-normal">
+            <h1 className="text-gray-200 text-base lg:text-lg font-medium">
               Trailer
             </h1>
           )}
@@ -108,11 +102,12 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       </div>
 
       <div className="flex items-center gap-7 text-white">
+        {/* Settings */}
         <div>
           <Tooltip title="Settings">
             <Popover button={<Settings className={iconClassName} />}>
               <div className="bg-white/90 backdrop-blur-md text-gray-900 rounded-xl shadow-xl w-56 p-2">
-                {/* Quality Section */}
+                {/* Quality */}
                 <div className="mb-2">
                   <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
                     Quality
@@ -125,7 +120,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                           setActiveQuality("auto");
                         }
                       }}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 ${
                         activeQuality === "auto"
                           ? "bg-green-100 font-semibold"
                           : ""
@@ -146,7 +141,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                               setActiveQuality(String(level.height));
                             }
                           }}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 ${
                             activeQuality === String(level.height)
                               ? "bg-green-100 font-semibold"
                               : ""
@@ -162,7 +157,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                   </div>
                 </div>
 
-                {/* Subtitles Section */}
+                {/* Subtitles */}
                 <div className="mb-2">
                   <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
                     Subtitles
@@ -170,7 +165,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                   <div className="flex flex-col gap-1">
                     <button
                       onClick={() => setActiveSubtitle(null)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 ${
                         !activeSubtitle ? "bg-green-100 font-semibold" : ""
                       }`}
                     >
@@ -183,7 +178,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                       <button
                         key={index}
                         onClick={() => setActiveSubtitle(subtitle)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 ${
                           activeSubtitle?.label === subtitle.label
                             ? "bg-green-100 font-semibold"
                             : ""
@@ -198,7 +193,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                   </div>
                 </div>
 
-                {/* Speed Section */}
+                {/* Speed */}
                 <div>
                   <p className="font-semibold mb-1 px-3 py-1 text-gray-700">
                     Speed
@@ -208,7 +203,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
                       <button
                         key={s}
                         onClick={() => handleSpeedChange(s)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 ${
                           speed === s ? "bg-green-100 font-semibold" : ""
                         }`}
                       >
@@ -222,6 +217,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
             </Popover>
           </Tooltip>
         </div>
+
+        {/* Volume */}
         <div onClick={handleMute}>
           {videoRef?.muted ? (
             <Tooltip title="Unmute">
@@ -233,6 +230,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
             </Tooltip>
           )}
         </div>
+
+        {/* Fullscreen */}
         <Tooltip
           title={
             isPipActive
@@ -255,14 +254,18 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
             />
           </div>
         </Tooltip>
+
+        {/* PiP */}
         <Tooltip title={isPipActive ? "Exit PiP" : "Enter PiP"}>
           <div onClick={handlePipToggle}>
             <PiPictureInPictureToggle className={iconClassName} />
           </div>
         </Tooltip>
+
+        {/* Close */}
         {config?.onClose && (
           <>
-            <div className="w-[2px] h-10 bg-gray-500 hover:bg-gray-300 transition-colors duration-200 mx-2" />
+            <div className="w-[2px] h-10 bg-gray-500 hover:bg-gray-300 mx-2" />
             <div onClick={config.onClose}>
               <Tooltip title="Close">
                 <IoMdClose className={iconClassName} />
