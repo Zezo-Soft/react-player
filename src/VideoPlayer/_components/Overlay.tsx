@@ -97,9 +97,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       className="absolute inset-0"
       onMouseMove={handleMouseEnter}
     >
-     <div className="px-6 lg:px-10">
-       {controls && <VideoPlayerControls config={config} />}
-     </div>
+      {controls && <VideoPlayerControls config={config} />}
 
       {showCountdown &&
         episodeList.length > 0 &&
