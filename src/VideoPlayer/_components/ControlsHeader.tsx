@@ -102,14 +102,14 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       <div className="flex">
         <div>
           {config?.title && (
-            <h1 className="text-gray-200 text-xl lg:text-4xl font-bold">
+            <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
               {config.title}
             </h1>
           )}
           {config?.isTrailer && (
-            <h1 className="text-gray-200 text-base lg:text-lg font-medium">
+            <p className="text-gray-300 text-sm lg:text-base font-normal">
               Trailer
-            </h1>
+            </p>
           )}
         </div>
       </div>

@@ -324,6 +324,13 @@ const VideoPlayer: React.FC<Props> = ({
         autoPlay
         crossOrigin="anonymous"
         onContextMenu={onRightClick}
+        playsInline
+        preload="auto"
+        onSeeked={(e) => {
+          if (e?.currentTarget?.currentTime) {
+            setCurrentTime(e?.currentTarget?.currentTime);
+          }
+        }}
         onTimeUpdate={(e) => {
           if (e?.currentTarget?.currentTime) {
             setCurrentTime(e?.currentTarget?.currentTime);
