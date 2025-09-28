@@ -45,7 +45,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     if (showCountdown && countdownTime > 0 && episodeList.length > 0) {
       timer = setInterval(() => {
         setCountdownTime(countdownTime - 1);
-      }, 2000);
+      }, 1000);
     } else if (showCountdown && countdownTime === 0 && episodeList.length > 0) {
       const nextIndex = currentEpisodeIndex + 1;
       if (nextIndex < episodeList.length) {

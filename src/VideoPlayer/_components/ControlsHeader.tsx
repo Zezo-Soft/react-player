@@ -24,6 +24,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     subtitles,
     activeSubtitle,
     setActiveSubtitle,
+    episodeList,
+    currentEpisodeIndex,
   } = useVideoStore();
 
   const [speed, setSpeed] = React.useState(1);
@@ -101,11 +103,12 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
       <div className="flex">
         <div>
-          {config?.title && (
-            <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
-              {config.title}
-            </h1>
-          )}
+          <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
+            {episodeList.length > 0
+              ? episodeList[currentEpisodeIndex]?.title
+              : config?.title}
+          </h1>
+
           {config?.isTrailer && (
             <p className="text-gray-300 text-sm lg:text-base font-normal">
               Trailer
