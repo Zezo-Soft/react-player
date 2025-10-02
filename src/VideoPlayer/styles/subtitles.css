@@ -1,0 +1,74 @@
+.video-player video::cue {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.custom-subtitle-overlay {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+
+  color: #000;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+  max-width: 70%;
+  min-width: fit-content;
+
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-subtitle-overlay:hover {
+  transform: translateX(-50%) scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .custom-subtitle-overlay {
+    font-size: 1.25rem;
+    padding: 8px 14px;
+    bottom: 8%;
+    max-width: 85%;
+  }
+}
+
+@media (max-width: 480px) {
+  .custom-subtitle-overlay {
+    font-size: 1rem;
+    padding: 6px 10px;
+    bottom: 6%;
+    max-width: 90%;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .custom-subtitle-overlay {
+    background: #ffff00;
+    color: #000;
+    border: 3px solid #000;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-subtitle-overlay {
+    transition: none;
+  }
+
+  .custom-subtitle-overlay:hover {
+    transform: translateX(-50%);
+  }
+}
