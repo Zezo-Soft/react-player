@@ -2,9 +2,6 @@ import React, { useEffect } from "react";
 import { Loader } from "lucide-react";
 import { useVideoStore } from "../../store/VideoState";
 
-const iconClasses =
-  "w-14 h-14 lg:w-18 lg:h-18 text-gray-400 hover:text-gray-200 cursor-pointer transition-colors duration-200";
-
 const MiddleControls: React.FC = () => {
   const { videoRef, isPlaying, setIsPlaying, isBuffering, setIsBuffering } =
     useVideoStore();
@@ -95,7 +92,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={iconClasses}
+          className="icon-class"
           fill="currentColor"
           viewBox="0 0 67 67"
         >
@@ -115,7 +112,7 @@ const MiddleControls: React.FC = () => {
         ) : isPlaying ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={iconClasses}
+            className="icon-class"
             fill="currentColor"
             viewBox="0 0 67 67"
           >
@@ -128,7 +125,7 @@ const MiddleControls: React.FC = () => {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={iconClasses}
+            className="icon-class"
             fill="currentColor"
             viewBox="0 0 67 67"
           >
@@ -142,7 +139,7 @@ const MiddleControls: React.FC = () => {
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className={iconClasses}
+          className="icon-class"
           fill="currentColor"
           viewBox="0 0 67 67"
         >

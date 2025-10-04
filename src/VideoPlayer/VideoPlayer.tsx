@@ -6,6 +6,7 @@ import { getExtensionFromUrl } from "./utils";
 import { TimeCode } from "./_components/TimeLine/TimeLine";
 import { IOnWatchTimeUpdated } from "../types";
 import VideoActionButton from "../components/ui/VideoActionButton";
+import "../../src/index.css";
 
 export interface Props {
   trackSrc: string;
@@ -323,6 +324,13 @@ const VideoPlayer: React.FC<Props> = ({
         autoPlay
         crossOrigin="anonymous"
         onContextMenu={onRightClick}
+        playsInline
+        preload="auto"
+        onSeeked={(e) => {
+          if (e?.currentTarget?.currentTime) {
+            setCurrentTime(e?.currentTarget?.currentTime);
+          }
+        }}
         onTimeUpdate={(e) => {
           if (e?.currentTarget?.currentTime) {
             setCurrentTime(e?.currentTarget?.currentTime);
