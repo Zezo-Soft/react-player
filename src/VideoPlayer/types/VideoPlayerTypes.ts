@@ -33,7 +33,6 @@ export interface VideoPlayerProps {
   subtitleStyle?: SubtitleStyleConfig;
 }
 
-// Re-export types from store for convenience
 export type { SubtitleTrack, Episode } from "../../store/types/StoreTypes";
 
 export interface IntroConfig {

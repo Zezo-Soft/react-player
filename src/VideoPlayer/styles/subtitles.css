@@ -36,7 +36,6 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .custom-subtitle-overlay {
     font-size: 1.25rem;

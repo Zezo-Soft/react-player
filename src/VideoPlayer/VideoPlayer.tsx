@@ -2,7 +2,6 @@ import React from "react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./_components/Overlay";
 import SubtitleOverlay from "./_components/SubtitleOverlay";
-import TestSubtitleOverlay from "./_components/TestSubtitleOverlay";
 import VideoActionButton from "../components/ui/VideoActionButton";
 import { VideoPlayerProps } from "./types/VideoPlayerTypes";
 import {
@@ -39,10 +38,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const { setVideoRef, setVideoWrapperRef, videoRef } = useVideoStore();
 
-  // Initialize all video functionality through custom hooks
   useVideoSource(trackSrc, type);
   useSubtitles(subtitles);
-  useSubtitleStyling(subtitleStyle); // Apply enhanced subtitle styling
+  useSubtitleStyling(subtitleStyle);
   useVideoTracking(tracking, episodeList, currentEpisodeIndex, onClose);
   const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
   useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
@@ -56,6 +54,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         width || "w-full"
       } mx-auto absolute`}
     >
+      {/* Poster overlay visible only during PiP */}
+      {trackPoster && (
+        <div
+          className="pip-poster absolute inset-0 bg-center bg-cover hidden"
+          style={{ backgroundImage: `url(${trackPoster})` }}
+        />
+      )}
       <video
         ref={setVideoRef}
         className={`w-full h-full relative ${className}`}
@@ -69,8 +74,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
       ></video>
-
-      {/* Overlay UI */}
       <Overlay
         config={{
           headerConfig: {
@@ -92,10 +95,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           },
         }}
       />
-      {/* Custom Subtitle Overlay */}
       <SubtitleOverlay styleConfig={subtitleStyle} />
-
-      {/* Skip Intro Button */}
       {showSkipIntro && (
         <VideoActionButton
           text="Skip Intro"

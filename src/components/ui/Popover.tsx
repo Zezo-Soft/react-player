@@ -3,13 +3,17 @@ import React, { useState, useRef, useEffect } from "react";
 interface PopoverProps {
   button: React.ReactNode;
   children: React.ReactNode;
-  closeOnButtonClick?: boolean; // new optional prop
+  closeOnButtonClick?: boolean;
+  className?: string;
+  align?: "left" | "center" | "right";
 }
 
 const Popover: React.FC<PopoverProps> = ({
   button,
   children,
   closeOnButtonClick = false,
+  className = "",
+  align = "left",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -47,6 +51,24 @@ const Popover: React.FC<PopoverProps> = ({
     setIsOpen((prev) => (closeOnButtonClick ? !prev : true));
   };
 
+  // Get alignment classes
+  const getAlignmentClasses = () => {
+    switch (align) {
+      case "center":
+        return "left-1/2 -translate-x-1/2";
+      case "right":
+        return "right-0";
+      case "left":
+      default:
+        return "left-0";
+    }
+  };
+
+  // Arrow is always centered regardless of popover alignment
+  const getArrowPositionClasses = () => {
+    return "left-1/2 -translate-x-1/2";
+  };
+
   return (
     <div className="relative inline-block">
       <div ref={buttonRef} onClick={togglePopover} tabIndex={0} role="button">
@@ -56,10 +78,12 @@ const Popover: React.FC<PopoverProps> = ({
       {isOpen && (
         <div
           ref={popoverRef}
-          className="absolute left-0 mt-2 w-fit bg-white shadow-lg rounded-lg border border-gray-200 z-50 p-4 transition-all duration-200"
+          className={`absolute ${getAlignmentClasses()} mt-2 w-fit bg-[#3a4049] text-white shadow-2xl rounded-lg border border-white/10 z-50 p-0 transition-all duration-200 ${className}`}
         >
           {/* Optional Arrow */}
-          <div className="absolute -top-2 left-4 w-3 h-3 bg-white transform rotate-45 border-l border-t border-gray-200 z-[-1]" />
+          <div
+            className={`absolute -top-2 ${getArrowPositionClasses()} w-3 h-3 bg-[#3a4049] transform rotate-45 border-l border-t border-white/10 z-[-1]`}
+          />
           {children}
         </div>
       )}

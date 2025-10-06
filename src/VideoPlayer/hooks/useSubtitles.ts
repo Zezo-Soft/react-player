@@ -7,18 +7,15 @@ export const useSubtitles = (subtitles?: SubtitleTrack[]) => {
 
   useEffect(() => {
     if (videoRef) {
-      // Remove existing tracks
       const tracks = videoRef.getElementsByTagName("track");
       while (tracks.length > 0) {
         videoRef.removeChild(tracks[0]);
       }
 
-      // Disable all text tracks
       Array.from(videoRef.textTracks).forEach((track) => {
         track.mode = "disabled";
       });
 
-      // Add active subtitle if available
       if (activeSubtitle && subtitles) {
         const index = subtitles.findIndex(
           (s) => s.label === activeSubtitle.label
@@ -35,22 +32,23 @@ export const useSubtitles = (subtitles?: SubtitleTrack[]) => {
           const textTrack = Array.from(videoRef.textTracks).find(
             (track) => track.label === activeSubtitle.label
           );
-          // Set up event listeners for track loading
           const handleTrackLoad = () => {
             const textTrack = Array.from(videoRef.textTracks).find(
               (track) => track.label === activeSubtitle.label
             );
             if (textTrack) {
-              textTrack.mode = "showing"; // Use showing mode for our custom overlay
-              console.log("Subtitle track loaded for custom rendering:", activeSubtitle.label);
+              textTrack.mode = "showing";
+              console.log(
+                "Subtitle track loaded for custom rendering:",
+                activeSubtitle.label
+              );
             }
           };
 
-          trackElement.addEventListener('load', handleTrackLoad);
-          
-          // Also try multiple times to ensure it loads
+          trackElement.addEventListener("load", handleTrackLoad);
+
           const attempts = [100, 500, 1000];
-          attempts.forEach(delay => {
+          attempts.forEach((delay) => {
             setTimeout(() => {
               const textTrack = Array.from(videoRef.textTracks).find(
                 (track) => track.label === activeSubtitle.label
@@ -62,7 +60,6 @@ export const useSubtitles = (subtitles?: SubtitleTrack[]) => {
           });
         }
       } else {
-        // When no active subtitle, ensure all tracks are disabled
         Array.from(videoRef.textTracks).forEach((track) => {
           track.mode = "disabled";
         });
@@ -70,7 +67,6 @@ export const useSubtitles = (subtitles?: SubtitleTrack[]) => {
     }
   }, [videoRef, activeSubtitle, subtitles]);
 
-  // Set subtitles in store when prop changes
   useEffect(() => {
     if (subtitles) {
       setSubtitles(subtitles);

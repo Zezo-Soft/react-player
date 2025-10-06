@@ -15,7 +15,6 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
     if (!videoRef) return;
 
     const handleTimeUpdate = () => {
-      // If no active subtitle, clear the display
       if (!activeSubtitle) {
         setCurrentSubtitle("");
         setIsVisible(false);
@@ -23,7 +22,6 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
       }
       const currentTime = videoRef.currentTime;
 
-      // Get the active text track
       const textTracks = Array.from(videoRef.textTracks);
       console.log(
         "Available text tracks:",
@@ -86,7 +84,6 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
     };
   }, [videoRef, activeSubtitle]);
 
-  // Clear subtitle display when activeSubtitle becomes null
   useEffect(() => {
     if (!activeSubtitle) {
       setCurrentSubtitle("");
@@ -125,22 +122,21 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
   const subtitleStyle = {
     position: "absolute" as const,
     ...getPositionStyles(),
-    fontSize: styleConfig?.fontSize || "1.75rem",
-    fontWeight: "600",
-    lineHeight: "1.3",
+    fontSize: styleConfig?.fontSize || "1.2rem",
+    fontWeight: "500",
+    lineHeight: "1.2",
     textAlign: "center" as const,
-    background:
-      styleConfig?.backgroundColor ||
-      "linear-gradient(135deg, #fbbf24, #f59e0b)",
-    color: styleConfig?.textColor || "#000000",
-    padding: styleConfig?.padding || "12px 20px",
-    borderRadius: styleConfig?.borderRadius || "12px",
-    maxWidth: styleConfig?.maxWidth || "80%",
+    background: styleConfig?.backgroundColor || "rgba(0, 0, 0, 0.4)",
+    color: styleConfig?.textColor || "#fff",
+    padding: styleConfig?.padding || "8px 16px",
+    borderRadius: styleConfig?.borderRadius || "5px",
+    maxWidth: styleConfig?.maxWidth || "60%",
     minWidth: "fit-content",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-    backdropFilter: "blur(2px)",
-    border: "2px solid rgba(255, 255, 255, 0.2)",
+    boxShadow: "0 6px 20px rgba(0, 0, 0, 0.4)",
+    backdropFilter: "blur(6px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
     transition: "all 0.2s ease-in-out",
+    opacity: isVisible ? 1 : 0,
     zIndex: 10,
     pointerEvents: "none" as const,
   };

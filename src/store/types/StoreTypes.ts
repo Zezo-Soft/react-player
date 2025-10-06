@@ -1,7 +1,7 @@
 import Hls from "hls.js";
 import { Dispatch, SetStateAction } from "react";
 
-// Base video element references
+// Base video element referencess
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
   setVideoRef: (ref: HTMLVideoElement) => void;
@@ -9,7 +9,7 @@ export interface VideoRefsState {
   setVideoWrapperRef: (ref: HTMLDivElement) => void;
 }
 
-// Video playback state
+// Video playback statee
 export interface VideoPlaybackState {
   playing: boolean | ((prevState: boolean) => boolean);
   setPlaying: Dispatch<SetStateAction<boolean>>;
@@ -23,7 +23,7 @@ export interface VideoPlaybackState {
   setVolume: (volume: number) => void;
 }
 
-// Video timing and progress
+// Video timing and progresss
 export interface VideoTimingState {
   currentTime: number;
   setCurrentTime: (currentTime: number) => void;
@@ -90,12 +90,12 @@ export interface IntroState {
 }
 
 // Combined video store state
-export interface VideoState 
+export interface VideoState
   extends VideoRefsState,
-          VideoPlaybackState,
-          VideoTimingState,
-          VideoControlsState,
-          VideoQualityState,
-          SubtitlesState,
-          EpisodesState,
-          IntroState {}
+    VideoPlaybackState,
+    VideoTimingState,
+    VideoControlsState,
+    VideoQualityState,
+    SubtitlesState,
+    EpisodesState,
+    IntroState {}

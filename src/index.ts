@@ -8,11 +8,7 @@ export type {
   IntroConfig,
   NextEpisodeConfig,
 } from "./VideoPlayer/types/VideoPlayerTypes";
-
-// Export subtitle styling types
 export type { SubtitleStyleConfig } from "./VideoPlayer/hooks/useSubtitleStyling";
-
-// Export store types
 export type {
   VideoState,
   VideoRefsState,

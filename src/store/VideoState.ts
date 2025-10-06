@@ -21,3 +21,10 @@ export const useVideoStore = create<VideoState>()((...a) => ({
   ...createEpisodesSlice(...a),
   ...createIntroSlice(...a),
 }));
+
+// Previous version before recent edits code changes in panding
+//   ...createVideoRefsSlice(...a),
+//   ...createVideoPlaybackSlice(...a),
+//   ...createVideoTimingSlice(...a),
+//  ...createEpisodesSlice(...a),
+//   ...createIntroSlice(...a),

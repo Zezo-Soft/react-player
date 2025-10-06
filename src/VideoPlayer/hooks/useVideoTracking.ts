@@ -12,7 +12,6 @@ export const useVideoTracking = (
   const startTime = useRef<number | null>(null);
   const isViewCounted = useRef(false);
 
-  // Handle video events (play, pause, ended)
   useEffect(() => {
     if (!videoRef) return;
 
@@ -64,9 +63,16 @@ export const useVideoTracking = (
       videoRef.removeEventListener("pause", onPause);
       videoRef.removeEventListener("ended", onEnded);
     };
-  }, [videoRef, episodeList, currentEpisodeIndex, onClose, tracking, setIsPlaying, setShowCountdown]);
+  }, [
+    videoRef,
+    episodeList,
+    currentEpisodeIndex,
+    onClose,
+    tracking,
+    setIsPlaying,
+    setShowCountdown,
+  ]);
 
-  // Handle page unload tracking
   useEffect(() => {
     const handleUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -79,7 +85,9 @@ export const useVideoTracking = (
         );
       }
 
-      const totalTimeWatched = Number(localStorage.getItem("current_time") || 0);
+      const totalTimeWatched = Number(
+        localStorage.getItem("current_time") || 0
+      );
       if (totalTimeWatched >= 30) {
         tracking?.onWatchTimeUpdated?.({
           watchTime: totalTimeWatched,
@@ -90,7 +98,7 @@ export const useVideoTracking = (
 
     window.addEventListener("beforeunload", handleUnload);
     window.addEventListener("unload", handleUnload);
-    
+
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
       window.removeEventListener("unload", handleUnload);

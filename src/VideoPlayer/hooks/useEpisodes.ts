@@ -8,14 +8,9 @@ export const useEpisodes = (
   currentEpisodeIndex?: number,
   nextEpisodeConfig?: NextEpisodeConfig
 ) => {
-  const { 
-    videoRef, 
-    setEpisodeList, 
-    setCurrentEpisodeIndex, 
-    setShowCountdown 
-  } = useVideoStore();
+  const { videoRef, setEpisodeList, setCurrentEpisodeIndex, setShowCountdown } =
+    useVideoStore();
 
-  // Set episodes and current index in store
   useEffect(() => {
     if (episodeList) {
       setEpisodeList(episodeList);
@@ -23,16 +18,19 @@ export const useEpisodes = (
     if (currentEpisodeIndex !== undefined) {
       setCurrentEpisodeIndex(currentEpisodeIndex);
     }
-  }, [episodeList, currentEpisodeIndex, setEpisodeList, setCurrentEpisodeIndex]);
+  }, [
+    episodeList,
+    currentEpisodeIndex,
+    setEpisodeList,
+    setCurrentEpisodeIndex,
+  ]);
 
-  // Handle next episode logic based on config
   useEffect(() => {
     if (!videoRef || !nextEpisodeConfig) return;
 
     const checkNextEpisode = () => {
       const currentTime = videoRef.currentTime || 0;
 
-      // Show countdown based on backend config
       if (nextEpisodeConfig.showAtEnd && videoRef.ended) {
         setShowCountdown(true);
       } else if (
@@ -45,7 +43,7 @@ export const useEpisodes = (
 
     videoRef.addEventListener("timeupdate", checkNextEpisode);
     videoRef.addEventListener("ended", checkNextEpisode);
-    
+
     return () => {
       videoRef.removeEventListener("timeupdate", checkNextEpisode);
       videoRef.removeEventListener("ended", checkNextEpisode);
