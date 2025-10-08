@@ -1,5 +1,5 @@
 /**
- * @description Converts seconds to hh:mm:ss
+ * @description
  * @param seconds
  * @returns
  */
@@ -18,7 +18,7 @@ export const timeFormat = (seconds: number) => {
 };
 
 /**
- * @description Converts seconds to hh:mm
+ * @description
  * @param seconds
  */
 export const timeFormatForContent = (seconds: number) => {
@@ -28,16 +28,14 @@ export const timeFormatForContent = (seconds: number) => {
   const date = new Date(seconds * 1000);
   const hh = date.getUTCHours();
   const mm = date.getUTCMinutes();
-  // if hh is not 0
   if (hh) {
     return `${hh}h ${mm.toString().padStart(2, "0")}min`;
   }
-  // if hh is 0
   return `${mm}min`;
 };
 
 /**
- * @description Converts seconds to milliseconds
+ * @description
  * @param seconds
  * @returns
  */
@@ -46,7 +44,7 @@ export const secondsToMilliseconds = (seconds: number) => {
 };
 
 /**
- * @description Converts milliseconds to seconds
+ * @description
  * @param milliseconds
  * @returns
  */
@@ -55,9 +53,9 @@ export const millisecondsToSeconds = (milliseconds: number) => {
 };
 
 /**
- * @description get extension from url
+ * @description
  * @param url
- * @returns string | undefined
+ * @returns
  */
 export const getExtensionFromUrl = (url: string) => {
   const extension = url?.split(".")?.pop();
