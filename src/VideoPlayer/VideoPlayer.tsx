@@ -62,17 +62,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         />
       )}
       <video
-        ref={setVideoRef}
-        className={`w-full h-full relative ${className}`}
-        poster={trackPoster}
         autoPlay
-        crossOrigin="anonymous"
-        onContextMenu={onRightClick}
+        muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        ref={setVideoRef}
         onSeeked={onSeeked}
+        poster={trackPoster}
+        crossOrigin="anonymous"
+        controls={false}
+        disableRemotePlayback
+        controlsList="nodownload"
+        onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
+        className={`w-full h-full relative ${className}`}
       ></video>
       <Overlay
         config={{
