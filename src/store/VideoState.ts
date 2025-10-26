@@ -9,22 +9,17 @@ import {
   createSubtitlesSlice,
   createEpisodesSlice,
   createIntroSlice,
+  createResetSlice,
 } from "./slices";
 
-export const useVideoStore = create<VideoState>()((...a) => ({
-  ...createVideoRefsSlice(...a),
-  ...createVideoPlaybackSlice(...a),
-  ...createVideoTimingSlice(...a),
-  ...createVideoControlsSlice(...a),
-  ...createVideoQualitySlice(...a),
-  ...createSubtitlesSlice(...a),
-  ...createEpisodesSlice(...a),
-  ...createIntroSlice(...a),
+export const useVideoStore = create<VideoState>()((set, get, store) => ({
+  ...createVideoRefsSlice(set, get, store),
+  ...createVideoPlaybackSlice(set, get, store),
+  ...createVideoTimingSlice(set, get, store),
+  ...createVideoControlsSlice(set, get, store),
+  ...createVideoQualitySlice(set, get, store),
+  ...createSubtitlesSlice(set, get, store),
+  ...createEpisodesSlice(set, get, store),
+  ...createIntroSlice(set, get, store),
+  ...createResetSlice(set, get, store),
 }));
-
-// Previous version before recent edits code changes in panding
-//   ...createVideoRefsSlice(...a),
-//   ...createVideoPlaybackSlice(...a),
-//   ...createVideoTimingSlice(...a),
-//  ...createEpisodesSlice(...a),
-//   ...createIntroSlice(...a),

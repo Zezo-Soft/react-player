@@ -13,7 +13,7 @@ import {
   useEpisodes,
   useVideoEvents,
 } from "./hooks";
-import "../../src/index.css";
+import "../index.css";
 import "./styles/subtitles.css";
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -44,7 +44,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useVideoTracking(tracking, episodeList, currentEpisodeIndex, onClose);
   const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
   useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
-  const { onRightClick, onSeeked, onTimeUpdate, onLoadedMetadata } =
+  const { onSeeked, onTimeUpdate, onLoadedMetadata, onProgress, onPlay, onPause, onEnded } =
     useVideoEvents();
 
   return (
@@ -54,7 +54,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         width || "w-full"
       } mx-auto absolute`}
     >
-      {/* Poster overlay visible only during PiP */}
       {trackPoster && (
         <div
           className="pip-poster absolute inset-0 bg-center bg-cover hidden"
@@ -63,7 +62,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       )}
       <video
         autoPlay
-        muted
         playsInline
         preload="metadata"
         ref={setVideoRef}
@@ -76,6 +74,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
+        onProgress={onProgress}
+        onPlay={onPlay}
+        onPause={onPause}
+        onEnded={onEnded}
         className={`w-full h-full relative ${className}`}
       ></video>
       <Overlay

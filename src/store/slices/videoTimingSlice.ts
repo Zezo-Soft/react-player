@@ -6,10 +6,13 @@ export const createVideoTimingSlice: StateCreator<
   [],
   [],
   VideoTimingState
-> = (set) => ({
+> = (set: any) => ({
   currentTime: 0,
-  setCurrentTime: (currentTime) => set({ currentTime }),
+  setCurrentTime: (currentTime: number) => set({ currentTime }),
   
   duration: 0,
-  setDuration: (duration) => set({ duration }),
+  setDuration: (duration: number) => set({ duration }),
+  
+  bufferedProgress: 0,
+  setBufferedProgress: (progress: number) => set({ bufferedProgress: progress }),
 });

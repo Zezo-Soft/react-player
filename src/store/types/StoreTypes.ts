@@ -1,7 +1,5 @@
 import Hls from "hls.js";
-import { Dispatch, SetStateAction } from "react";
 
-// Base video element referencess
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
   setVideoRef: (ref: HTMLVideoElement) => void;
@@ -9,26 +7,31 @@ export interface VideoRefsState {
   setVideoWrapperRef: (ref: HTMLDivElement) => void;
 }
 
-// Video playback statee
 export interface VideoPlaybackState {
-  playing: boolean | ((prevState: boolean) => boolean);
-  setPlaying: Dispatch<SetStateAction<boolean>>;
+  playing: boolean;
+  setPlaying: (playing: boolean) => void;
+
   isBuffering: boolean;
   setIsBuffering: (isBuffering: boolean) => void;
+
   isPlaying: boolean;
   setIsPlaying: (isPlaying: boolean) => void;
+
   muted: boolean;
   setMuted: (muted: boolean) => void;
+
   volume: number;
   setVolume: (volume: number) => void;
 }
 
-// Video timing and progresss
+// Video timing and progress
 export interface VideoTimingState {
   currentTime: number;
   setCurrentTime: (currentTime: number) => void;
   duration: number;
   setDuration: (duration: number) => void;
+  bufferedProgress: number;
+  setBufferedProgress: (progress: number) => void;
 }
 
 // Video controls and UI
@@ -89,6 +92,11 @@ export interface IntroState {
   setShowIntroSkip: (show: boolean) => void;
 }
 
+// Store reset functionality
+export interface StoreResetState {
+  resetStore: () => void;
+}
+
 // Combined video store state
 export interface VideoState
   extends VideoRefsState,
@@ -98,4 +106,5 @@ export interface VideoState
     VideoQualityState,
     SubtitlesState,
     EpisodesState,
-    IntroState {}
+    IntroState,
+    StoreResetState {}

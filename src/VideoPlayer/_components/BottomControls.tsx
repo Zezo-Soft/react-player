@@ -6,16 +6,15 @@ import "./TimeLine/time-line.css";
 import { IControlsBottomProps } from "../../types";
 
 const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
-  const { videoRef, currentTime, isFullscreen } = useVideoStore();
+  const { videoRef, currentTime, isFullscreen, bufferedProgress } = useVideoStore();
   const duration = videoRef?.duration;
-  const bufferTime = 0;
 
   return (
     <div className="px-10">
       <VideoSeekSlider
         max={secondsToMilliseconds(duration || 0)}
         currentTime={secondsToMilliseconds(currentTime || 0)}
-        bufferTime={secondsToMilliseconds(bufferTime || 0)}
+        bufferTime={secondsToMilliseconds((duration || 0) * (bufferedProgress / 100))}
         onChange={(currentTime: number) => {
           if (videoRef) {
             videoRef.currentTime = currentTime / 1000;
