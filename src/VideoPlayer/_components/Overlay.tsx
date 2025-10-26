@@ -3,8 +3,8 @@ import { useCallback, useRef } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import VideoPlayerControls from "./VideoPlayerControls";
 import { IPlayerConfig } from "../../types";
-import { FaGooglePlay } from "react-icons/fa";
 import VideoActionButton from "../../components/ui/VideoActionButton";
+import { ArrowRight } from "lucide-react";
 
 const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -46,37 +46,11 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       timer = setInterval(() => {
         setCountdownTime(countdownTime - 1);
       }, 1000);
-    } else if (showCountdown && countdownTime === 0 && episodeList.length > 0) {
-      const nextIndex = currentEpisodeIndex + 1;
-      if (nextIndex < episodeList.length) {
-        setCurrentEpisodeIndex(nextIndex);
-        setAutoPlayNext(true);
-        if (videoRef && episodeList[nextIndex]) {
-          videoRef.src = episodeList[nextIndex].url;
-          videoRef
-            .play()
-            .catch((err) => console.error("Auto-play failed:", err));
-        }
-      } else {
-        if (onClose) onClose();
-      }
-      setShowCountdown(false);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [
-    showCountdown,
-    countdownTime,
-    episodeList.length,
-    setCountdownTime,
-    setCurrentEpisodeIndex,
-    currentEpisodeIndex,
-    setAutoPlayNext,
-    videoRef,
-    episodeList,
-    onClose,
-  ]);
+  }, [showCountdown, countdownTime, episodeList.length, setCountdownTime]);
 
   const handleNextEpisodeManually = () => {
     const nextIndex = currentEpisodeIndex + 1;
@@ -84,8 +58,11 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       setCurrentEpisodeIndex(nextIndex);
       setAutoPlayNext(true);
       videoRef.src = episodeList[nextIndex].url;
-      videoRef.play().catch((err) => console.error("Manual play failed:", err));
+      videoRef
+        .play()
+        .catch((err: Error) => console.error("Manual play failed:", err));
       setShowCountdown(false);
+      setCountdownTime(10);
     } else if (onClose) {
       onClose();
     }
@@ -105,7 +82,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
           <VideoActionButton
             text="Next Episode"
             onClick={handleNextEpisodeManually}
-            icon={<FaGooglePlay className="text-black" />}
+            icon={<ArrowRight className="h-5 w-5 text-gray-900" />}
             disabled={currentEpisodeIndex + 1 >= episodeList.length}
             position="right"
           />

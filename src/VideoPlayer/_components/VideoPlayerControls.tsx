@@ -6,15 +6,11 @@ import { IPlayerConfig } from "../../types";
 
 const VideoPlayerControls: React.FC<IPlayerConfig> = ({
   config,
-  height,
-  width,
 }) => {
   return (
     <div className="px-20">
       <div
-        className={`absolute top-0 left-0 ${height || "h-full"} ${
-          width || "w-full"
-        } bg-[rgba(0,0,0,0.5)] flex flex-col justify-between`}
+        className="absolute top-0 left-0 h-full w-full bg-[rgba(0,0,0,0.5)] flex flex-col justify-between"
       >
         <ControlsHeader config={config?.headerConfig?.config} />
         <MiddleControls />

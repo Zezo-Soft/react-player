@@ -11,7 +11,7 @@ const MiddleControls: React.FC = () => {
     if (videoRef.paused) {
       videoRef
         .play()
-        .catch((error) => console.error("Error playing video:", error));
+        .catch((error: Error) => console.error("Error playing video:", error));
       setIsPlaying(true);
     } else {
       videoRef.pause();
@@ -29,41 +29,40 @@ const MiddleControls: React.FC = () => {
     videoRef.currentTime += 10;
   };
 
-  // Handle buffering state
   useEffect(() => {
     if (!videoRef) return;
 
     const handleWaiting = () => {
-      setIsBuffering(true);
+      if (!videoRef.paused) {
+        setIsBuffering(true);
+      }
     };
 
     const handlePlaying = () => {
       setIsBuffering(false);
     };
 
+    const handleCanPlay = () => {
+      setIsBuffering(false);
+    };
+
+    const handlePause = () => {
+      setIsBuffering(false);
+    };
+
     videoRef.addEventListener("waiting", handleWaiting);
     videoRef.addEventListener("playing", handlePlaying);
+    videoRef.addEventListener("canplay", handleCanPlay);
+    videoRef.addEventListener("pause", handlePause);
 
     return () => {
       videoRef.removeEventListener("waiting", handleWaiting);
       videoRef.removeEventListener("playing", handlePlaying);
+      videoRef.removeEventListener("canplay", handleCanPlay);
+      videoRef.removeEventListener("pause", handlePause);
     };
   }, [videoRef, setIsBuffering]);
 
-  useEffect(() => {
-    if (!videoRef) return;
-    const handleWaiting = () => setIsBuffering(true);
-    const handlePlaying = () => setIsBuffering(false);
-    videoRef.addEventListener("waiting", handleWaiting);
-    videoRef.addEventListener("playing", handlePlaying);
-
-    return () => {
-      videoRef.removeEventListener("waiting", handleWaiting);
-      videoRef.removeEventListener("playing", handlePlaying);
-    };
-  }, [videoRef, setIsBuffering]);
-
-  //  keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!videoRef) return;

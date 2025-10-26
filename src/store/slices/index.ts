@@ -6,3 +6,4 @@ export { createVideoQualitySlice } from "./videoQualitySlice";
 export { createSubtitlesSlice } from "./subtitlesSlice";
 export { createEpisodesSlice } from "./episodesSlice";
 export { createIntroSlice } from "./introSlice";
+export { createResetSlice } from "./resetSlice";
