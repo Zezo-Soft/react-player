@@ -16,6 +16,8 @@ export default defineConfig({
     "lucide-react",
     "hls.js",
     "react-icons/io",
+    "screenfull",
+    "react-icons/io5",
   ],
   plugins: [
     typescript({ tsconfig: "tsconfig.json" }),

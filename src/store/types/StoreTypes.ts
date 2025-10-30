@@ -40,9 +40,11 @@ export interface VideoControlsState {
   setControls: (controls: boolean) => void;
   isFullscreen: boolean;
   setIsFullscreen: (isFullscreen: boolean) => void;
+
+  controlsVisible: boolean;
+  setControlsVisible: (visible: boolean) => void;
 }
 
-// Video quality and streaming
 export interface VideoQualityState {
   hlsInstance?: Hls;
   setHlsInstance: (hlsInstance: Hls) => void;

@@ -1,7 +1,7 @@
 import * as React from "react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { useVideoStore } from "../../store/VideoState";
-import VideoPlayerControls from "./VideoPlayerControls";
+import VideoPlayerControls from "../MediaControls/VideoPlayerControls";
 import { IPlayerConfig } from "../../types";
 import VideoActionButton from "../../components/ui/VideoActionButton";
 import { ArrowRight } from "lucide-react";
@@ -21,7 +21,25 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     videoRef,
     currentEpisodeIndex,
   } = useVideoStore();
+
   const { onClose } = config?.headerConfig?.config || {};
+
+  const HIDE_DELAY = 2000;
+
+  const resetControlsTimer = useCallback(() => {
+    if (controlsTimerRef.current) {
+      clearTimeout(controlsTimerRef.current);
+    }
+    controlsTimerRef.current = setTimeout(() => {
+      setControls(false);
+      const videoPlayerControls = document?.getElementById(
+        "videoPlayerControls"
+      );
+      if (videoPlayerControls) {
+        videoPlayerControls.classList.add("noCursor");
+      }
+    }, HIDE_DELAY);
+  }, [setControls]);
 
   const handleMouseEnter = useCallback(() => {
     const videoPlayerControls = document?.getElementById("videoPlayerControls");
@@ -29,18 +47,18 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       videoPlayerControls.classList.remove("noCursor");
     }
     setControls(true);
-    if (controlsTimerRef.current) {
-      clearTimeout(controlsTimerRef.current);
-    }
-    controlsTimerRef.current = setTimeout(() => {
-      setControls(false);
-      if (videoPlayerControls) {
-        videoPlayerControls.classList.add("noCursor");
-      }
-    }, 2000);
-  }, [setControls]);
+    resetControlsTimer();
+  }, [setControls, resetControlsTimer]);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    return () => {
+      if (controlsTimerRef.current) {
+        clearTimeout(controlsTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let timer: NodeJS.Timeout;
     if (showCountdown && countdownTime > 0 && episodeList.length > 0) {
       timer = setInterval(() => {
@@ -63,6 +81,9 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
         .catch((err: Error) => console.error("Manual play failed:", err));
       setShowCountdown(false);
       setCountdownTime(10);
+
+      setControls(true);
+      resetControlsTimer();
     } else if (onClose) {
       onClose();
     }

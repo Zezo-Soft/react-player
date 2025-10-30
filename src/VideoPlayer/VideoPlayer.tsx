@@ -21,6 +21,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   trackTitle,
   intro,
   onClose,
+  onError,
   trackPoster,
   isTrailer,
   className,
@@ -33,8 +34,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   subtitles,
   episodeList,
   currentEpisodeIndex = 0,
+  onEnded,
   nextEpisodeConfig,
   subtitleStyle,
+  showControls = true,
+  isMute = false,
 }) => {
   const { setVideoRef, setVideoWrapperRef, videoRef } = useVideoStore();
 
@@ -44,8 +48,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useVideoTracking(tracking, episodeList, currentEpisodeIndex, onClose);
   const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
   useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
-  const { onSeeked, onTimeUpdate, onLoadedMetadata, onProgress, onPlay, onPause, onEnded } =
-    useVideoEvents();
+  const {
+    onSeeked,
+    onTimeUpdate,
+    onLoadedMetadata,
+    onProgress,
+    onPlay,
+    onPause,
+    onEnded: onEndedHook,
+  } = useVideoEvents();
 
   return (
     <div
@@ -60,6 +71,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           style={{ backgroundImage: `url(${trackPoster})` }}
         />
       )}
+
       <video
         autoPlay
         playsInline
@@ -77,30 +89,39 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onProgress={onProgress}
         onPlay={onPlay}
         onPause={onPause}
-        onEnded={onEnded}
+        onEnded={(e) => {
+          onEndedHook(e);
+          onEnded?.(e);
+        }}
+        onError={(e) => {
+          onError?.(e);
+        }}
+        muted={isMute}
         className={`w-full h-full relative ${className}`}
-      ></video>
-      <Overlay
-        config={{
-          headerConfig: {
-            config: {
-              isTrailer: isTrailer,
-              title: trackTitle,
-              onClose: onClose,
-              videoRef: videoRef as any,
-            },
-          },
-          bottomConfig: {
-            config: {
-              seekBarConfig: {
-                timeCodes: timeCodes,
-                trackColor: "red",
-                getPreviewScreenUrl,
+      />
+      {showControls && (
+        <Overlay
+          config={{
+            headerConfig: {
+              config: {
+                isTrailer: isTrailer,
+                title: trackTitle,
+                onClose: onClose,
+                videoRef: videoRef as any,
               },
             },
-          },
-        }}
-      />
+            bottomConfig: {
+              config: {
+                seekBarConfig: {
+                  timeCodes: timeCodes,
+                  trackColor: "red",
+                  getPreviewScreenUrl,
+                },
+              },
+            },
+          }}
+        />
+      )}
       <SubtitleOverlay styleConfig={subtitleStyle} />
       {showSkipIntro && (
         <VideoActionButton
