@@ -74,8 +74,7 @@ export const useVideoTracking = (
   ]);
 
   useEffect(() => {
-    const handleUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
+    const handleUnload = () => {
       if (startTime.current) {
         const elapsedTime = (Date.now() - startTime.current) / 1000;
         const getCurrentTime = localStorage.getItem("current_time");
@@ -96,11 +95,9 @@ export const useVideoTracking = (
       localStorage.setItem("current_time", "0");
     };
 
-    window.addEventListener("beforeunload", handleUnload);
     window.addEventListener("unload", handleUnload);
 
     return () => {
-      window.removeEventListener("beforeunload", handleUnload);
       window.removeEventListener("unload", handleUnload);
     };
   }, [tracking]);

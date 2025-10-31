@@ -62,5 +62,10 @@ export const getExtensionFromUrl = (url: string) => {
   if (extension === "m3u8") {
     return "hls";
   }
+  if (extension === "mpd") {
+    return "dash";
+  }
   return extension;
 };
+
+export { QualityManager } from './qualityManager';
