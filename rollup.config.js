@@ -18,6 +18,7 @@ export default defineConfig({
     "react-icons/io",
     "screenfull",
     "react-icons/io5",
+    "dashjs",
   ],
   plugins: [
     typescript({ tsconfig: "tsconfig.json" }),
