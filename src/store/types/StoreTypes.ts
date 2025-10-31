@@ -1,4 +1,5 @@
 import Hls from "hls.js";
+import * as dashjs from "dashjs";
 
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
@@ -40,16 +41,37 @@ export interface VideoControlsState {
   setControls: (controls: boolean) => void;
   isFullscreen: boolean;
   setIsFullscreen: (isFullscreen: boolean) => void;
+
+  controlsVisible: boolean;
+  setControlsVisible: (visible: boolean) => void;
 }
 
-// Video quality and streaming
+// Video quality state
 export interface VideoQualityState {
-  hlsInstance?: Hls;
-  setHlsInstance: (hlsInstance: Hls) => void;
-  qualityLevels?: Hls["levels"];
-  setQualityLevels: (qualityLevels: Hls["levels"]) => void;
+  hlsInstance?: Hls | null; // null for native HLS, undefined when not available
+  setHlsInstance: (hlsInstance: Hls | null) => void;
+  
+  dashInstance?: dashjs.MediaPlayerClass;
+  setDashInstance: (dashInstance: dashjs.MediaPlayerClass) => void;
+  
+  qualityLevels?: Array<{
+    height: number;
+    bitrate?: number;
+    originalIndex: number;
+    id?: string; // For DASH
+  }>;
+  setQualityLevels: (qualityLevels: Array<{
+    height: number;
+    bitrate?: number;
+    originalIndex: number;
+    id?: string;
+  }>) => void;
+  
   activeQuality: string;
   setActiveQuality: (activeQuality: string) => void;
+  
+  streamType: "hls" | "dash" | "mp4" | "other";
+  setStreamType: (streamType: "hls" | "dash" | "mp4" | "other") => void;
 }
 
 // Subtitle types and state

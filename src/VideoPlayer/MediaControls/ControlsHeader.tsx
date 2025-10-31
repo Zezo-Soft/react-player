@@ -7,8 +7,8 @@ import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureTogg
 import Settings from "../../components/ui/Settings";
 import { useVideoStore } from "../../store/VideoState";
 import { IControlsHeaderProps } from "../../types";
-import screenfull from "screenfull";
 import "../_components/styles/video-controls.css";
+import screenfull from "screenfull";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const iconClassName = "icon-button";
@@ -139,7 +139,10 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
           </div>
         </Tooltip>
 
-        <Tooltip title={isPipActive ? "Exit PiP" : "Enter PiP"}>
+        <Tooltip
+          className="whitespace-nowrap"
+          title={isPipActive ? "Exit PiP" : "Enter PiP"}
+        >
           <div onClick={handlePipToggle}>
             <PiPictureInPictureToggle className={iconClassName} />
           </div>

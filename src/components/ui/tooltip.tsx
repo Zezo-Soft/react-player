@@ -1,5 +1,4 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface TooltipProps {
   children: React.ReactNode;
@@ -31,7 +30,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       {children}
       {visible && (
         <div
-          className={`absolute z-50 px-3 py-1 text-sm text-white bg-gray-900 rounded-md shadow-md transition-opacity duration-200 ease-in-out ${positionStyles[position]}`}
+          className={`absolute z-50 px-3 py-1 text-sm text-white bg-gray-900 rounded-md shadow-md transition-opacity duration-200 ease-in-out whitespace-nowrap ${positionStyles[position]}`}
         >
           {title}
         </div>

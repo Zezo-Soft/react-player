@@ -65,7 +65,7 @@ export const useVideoEvents = () => {
     setIsPlaying(false);
   };
 
-  const onEnded = () => {
+  const onEnded = (e: unknown) => {
     setIsPlaying(false);
   };
 

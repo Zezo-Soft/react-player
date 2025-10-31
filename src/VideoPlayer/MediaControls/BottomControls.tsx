@@ -1,12 +1,13 @@
 import React from "react";
 import { secondsToMilliseconds, timeFormat } from "../utils";
 import { useVideoStore } from "../../store/VideoState";
-import { VideoSeekSlider } from "./TimeLine/TimeLine";
-import "./TimeLine/time-line.css";
+import { VideoSeekSlider } from "../_components/TimeLine/TimeLine";
+import "../_components/TimeLine/time-line.css";
 import { IControlsBottomProps } from "../../types";
 
 const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
-  const { videoRef, currentTime, isFullscreen, bufferedProgress } = useVideoStore();
+  const { videoRef, currentTime, isFullscreen, bufferedProgress } =
+    useVideoStore();
   const duration = videoRef?.duration;
 
   return (
@@ -14,7 +15,9 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
       <VideoSeekSlider
         max={secondsToMilliseconds(duration || 0)}
         currentTime={secondsToMilliseconds(currentTime || 0)}
-        bufferTime={secondsToMilliseconds((duration || 0) * (bufferedProgress / 100))}
+        bufferTime={secondsToMilliseconds(
+          (duration || 0) * (bufferedProgress / 100)
+        )}
         onChange={(currentTime: number) => {
           if (videoRef) {
             videoRef.currentTime = currentTime / 1000;

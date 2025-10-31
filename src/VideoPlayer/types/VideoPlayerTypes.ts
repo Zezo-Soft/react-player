@@ -4,6 +4,10 @@ import { SubtitleStyleConfig } from "../hooks/useSubtitleStyling";
 
 export interface VideoPlayerProps {
   trackSrc: string;
+  showControls?: boolean;
+  isMute?: boolean;
+  onEnded?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onError?: (e?: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   trackTitle?: string;
   trackPoster?: string;
   isTrailer?: boolean;
@@ -31,6 +35,7 @@ export interface VideoPlayerProps {
   };
   nextEpisodeConfig?: { showAtTime?: number; showAtEnd?: boolean };
   subtitleStyle?: SubtitleStyleConfig;
+
 }
 
 export type { SubtitleTrack, Episode } from "../../store/types/StoreTypes";

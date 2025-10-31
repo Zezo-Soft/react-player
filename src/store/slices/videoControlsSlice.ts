@@ -9,7 +9,10 @@ export const createVideoControlsSlice: StateCreator<
 > = (set) => ({
   controls: false,
   setControls: (controls) => set({ controls }),
-  
+
   isFullscreen: false,
   setIsFullscreen: (isFullscreen) => set({ isFullscreen }),
+
+  controlsVisible: true,
+  setControlsVisible: (visible: boolean) => set({ controlsVisible: visible }),
 });
