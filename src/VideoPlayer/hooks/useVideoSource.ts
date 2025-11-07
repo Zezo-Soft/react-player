@@ -44,9 +44,8 @@ export const useVideoSource = (
     if (contentType === "hls") {
       // Native HLS support (Safari/iOS)
       if (videoRef?.canPlayType("application/vnd.apple.mpegurl")) {
-        console.log('📱 Using native HLS support');
         videoRef.src = trackSrc;
-        
+
         // For native HLS, we can't control quality directly, but we can still extract info
         const handleLoadedMetadata = () => {
           const videoElement = videoRef as any;
@@ -58,7 +57,6 @@ export const useVideoSource = (
               originalIndex: index
             }));
             setQualityLevels(tracks);
-            console.log('✅ Native HLS quality levels:', tracks);
           } else {
             // Fallback quality levels for native HLS
             const defaultLevels = [
@@ -68,7 +66,6 @@ export const useVideoSource = (
               { height: 1080, bitrate: 5000000, originalIndex: 3 },
             ];
             setQualityLevels(defaultLevels);
-            console.log('✅ Native HLS fallback quality levels:', defaultLevels);
           }
           
           // Even for native HLS, set a mock HLS instance to indicate it's HLS
@@ -84,7 +81,6 @@ export const useVideoSource = (
       } 
       // HLS.js support (Chrome/Firefox/etc)
       else if (Hls.isSupported()) {
-        console.log('🔧 Using HLS.js for HLS streaming');
         const hls = new Hls({
           // HLS.js configuration for optimal performance
           enableWorker: true,
@@ -94,7 +90,6 @@ export const useVideoSource = (
         
         hls.loadSource(trackSrc);
         hls.attachMedia(videoRef as HTMLMediaElement);
-        console.log('✅ HLS.js instance created and attached');
         setHlsInstance(hls);
         
         // Extract quality levels when manifest is parsed
@@ -105,27 +100,32 @@ export const useVideoSource = (
             originalIndex: index
           }));
           setQualityLevels(levels);
-          console.log('✅ HLS.js quality levels:', levels);
         });
-        
-        // Log level switches for debugging
-        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-          console.log('🔄 HLS level switched to:', data.level, hls.levels?.[data.level]);
-        });
-        
+
         // Error handling
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('❌ HLS.js error:', data);
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (!data?.fatal) return;
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              hls.destroy();
+              setHlsInstance(null as any);
+              videoRef.src = trackSrc;
+              break;
+          }
         });
 
         // Cleanup
         return () => {
           hls.destroy();
-          console.log('🧹 HLS.js instance destroyed');
         };
       } else {
         // Fallback when HLS.js is not supported
-        console.log('📱 Using fallback HLS (direct src)');
         videoRef.src = trackSrc;
         setHlsInstance(null as any); // null indicates native HLS fallback
         
@@ -137,14 +137,12 @@ export const useVideoSource = (
           { height: 1080, bitrate: 5000000, originalIndex: 3 },
         ];
         setQualityLevels(defaultLevels);
-        console.log('✅ HLS fallback quality levels:', defaultLevels);
       }
     } 
     // Handle DASH streams
     else if (contentType === "dash") {
       // DASH.js support
       if (dashjs.supportsMediaSource()) {
-        console.log('🔧 Using DASH.js for DASH streaming');
         const player = dashjs.MediaPlayer().create();
         
         // DASH.js configuration for optimal performance
@@ -161,7 +159,6 @@ export const useVideoSource = (
         });
         
         player.initialize(videoRef as HTMLMediaElement, trackSrc, true);
-        console.log('✅ DASH.js instance created and initialized');
         setDashInstance(player);
         
         // Extract quality levels when manifest is loaded
@@ -176,37 +173,32 @@ export const useVideoSource = (
                 id: rep.id
               }));
               setQualityLevels(levels);
-              console.log('✅ DASH.js quality levels:', levels);
             } else {
-              console.warn('⚠️ No DASH video representations found');
               setQualityLevels([]);
             }
           } catch (error) {
-            console.error('❌ Error getting DASH quality levels:', error);
             setQualityLevels([]);
           }
         };
         
         // Listen for manifest loaded event
         player.on('manifestLoaded' as any, handleManifestLoaded);
-        
-        // Log quality changes for debugging
-        player.on('qualityChange' as any, (e: any) => {
-          console.log('🔄 DASH quality changed to:', e.newQuality, e);
-        });
-        
+
         // Error handling
-        player.on('error' as any, (e: any) => {
-          console.error('❌ DASH.js error:', e);
+        player.on('error' as any, () => {
+          player.reset();
+          setDashInstance(undefined as any);
+          videoRef.src = trackSrc;
         });
         
         // Cleanup
         return () => {
           player.reset();
-          console.log('🧹 DASH.js instance reset');
         };
       } else {
-        console.warn('⚠️ DASH.js not supported in this browser');
+        videoRef.src = trackSrc;
+        setDashInstance(undefined as any);
+        setQualityLevels([]);
       }
     }
     

@@ -2,9 +2,9 @@ import React, { useCallback, useEffect } from "react";
 import { isInRange } from "../utils/isInRange";
 import { positionToMs } from "../utils/positionToMs";
 import { getEndTimeByIndex } from "../utils/getEndTimeByIndex";
-import { TimeCode, TimeCodeItem } from "./timeCodeItem";
+import { TimeCode, TimeCodeItem } from "./TimeCodeItem";
 
-export interface Props {
+export interface TimeCodesProps {
   max: number;
   currentTime: number;
   bufferTime: number;
@@ -17,7 +17,7 @@ export interface Props {
   trackColor?: string;
 }
 
-export const TimeCodes: React.FC<Props> = ({
+export const TimeCodes: React.FC<TimeCodesProps> = ({
   max = 1000,
   currentTime = 0,
   bufferTime = 0,
@@ -37,7 +37,7 @@ export const TimeCodes: React.FC<Props> = ({
         setLabel(currentLabel);
       }
     },
-    [label]
+    [label, setLabel]
   );
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export const TimeCodes: React.FC<Props> = ({
     if (currentCode?.description !== label) {
       setLabel(currentCode?.description || "");
     }
-  }, [currentTime, label, max, timeCodes]);
+  }, [currentTime, label, max, timeCodes, mobileSeeking, setLabel]);
 
   return (
     <>
@@ -96,3 +96,4 @@ export const TimeCodes: React.FC<Props> = ({
     </>
   );
 };
+

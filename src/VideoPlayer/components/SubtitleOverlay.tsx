@@ -23,25 +23,10 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
       const currentTime = videoRef.currentTime;
 
       const textTracks = Array.from(videoRef.textTracks);
-      console.log(
-        "Available text tracks:",
-        textTracks.map((t) => ({
-          label: t.label,
-          mode: t.mode,
-          cues: t.cues?.length,
-        }))
-      );
 
       const activeTrack = textTracks.find(
         (track) =>
           track.mode === "showing" && track.label === activeSubtitle.label
-      );
-
-      console.log(
-        "Active track found:",
-        !!activeTrack,
-        "Current time:",
-        currentTime
       );
 
       if (activeTrack && activeTrack.cues) {
@@ -63,8 +48,7 @@ const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({ styleConfig }) => {
             } else {
               cueText = cue.toString() || "";
             }
-          } catch (error) {
-            console.warn("Error getting subtitle text:", error);
+          } catch (_error) {
             cueText = "";
           }
 

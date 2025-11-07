@@ -32,6 +32,15 @@ export const createResetSlice: StateCreator<
       countdownTime: 10,
       autoPlayNext: false,
       showIntroSkip: false,
+      isAdPlaying: false,
+      currentAd: null,
+      adType: null,
+      adCurrentTime: 0,
+      canSkipAd: false,
+      skipCountdown: 0,
+      playedAdBreaks: [],
+      midRollQueue: [],
+      adVideoRef: null,
     });
   },
 });

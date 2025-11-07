@@ -1,14 +1,19 @@
 import React from "react";
 import { secondsToMilliseconds, timeFormat } from "../utils";
 import { useVideoStore } from "../../store/VideoState";
-import { VideoSeekSlider } from "../_components/TimeLine/TimeLine";
-import "../_components/TimeLine/time-line.css";
+import { VideoSeekSlider } from "../components/time-line/TimeLine";
+import "../components/time-line/time-line.css";
 import { IControlsBottomProps } from "../../types";
 
 const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
-  const { videoRef, currentTime, isFullscreen, bufferedProgress } =
+  const { videoRef, currentTime, isFullscreen, bufferedProgress, isAdPlaying } =
     useVideoStore();
   const duration = videoRef?.duration;
+
+  // Don't show seek bar during ads
+  if (isAdPlaying) {
+    return null;
+  }
 
   return (
     <div className="px-10">

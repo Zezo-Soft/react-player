@@ -1,5 +1,5 @@
 import React from "react";
-import "../../VideoPlayer/_components/styles/video-controls.css";
+import "../../VideoPlayer/components/styles/video-controls.css";
 
 interface PiPictureInPictureToggleProps {
   onClick?: () => void;

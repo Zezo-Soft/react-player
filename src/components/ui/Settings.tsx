@@ -2,7 +2,7 @@ import * as React from "react";
 import { Check, ChevronRight } from "lucide-react";
 import Popover from "../ui/Popover";
 import { Settings as SettingsIcon } from "lucide-react";
-import Tooltip from "../ui/tooltip";
+import Tooltip from "../ui/Tooltip";
 import { useVideoStore } from "../../store/VideoState";
 
 interface SettingsProps {

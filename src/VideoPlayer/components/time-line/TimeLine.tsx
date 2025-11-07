@@ -1,19 +1,20 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { TimeCodeItem } from "./_components/timeCodeItem";
+import { TimeCodeItem } from "./components/TimeCodeItem";
 import { isInRange } from "./utils/isInRange";
 import { positionToMs } from "./utils/positionToMs";
 import { getEndTimeByIndex } from "./utils/getEndTimeByIndex";
-import { TimeCodes } from "./_components/timeCodes";
-import { HoverTimeWithPreview } from "./_components/hoverTimeWithPreview";
-import { Thumb } from "./_components/thumb";
+import { TimeCodes } from "./components/TimeCodes";
+import { HoverTimeWithPreview } from "./components/HoverTimeWithPreview";
+import { Thumb } from "./components/Thumb";
+import "./time-line.css";
 
 export interface TimeCode {
   fromMs: number;
   description: string;
 }
 
-export interface Props {
+export interface TimeLineProps {
   max: number;
   currentTime: number;
   bufferTime?: number;
@@ -28,7 +29,7 @@ export interface Props {
   trackColor?: string;
 }
 
-export const VideoSeekSlider: React.FC<Props> = ({
+export const VideoSeekSlider: React.FC<TimeLineProps> = ({
   max = 1000,
   currentTime = 0,
   bufferTime = 0,
@@ -217,3 +218,4 @@ export const VideoSeekSlider: React.FC<Props> = ({
     </div>
   );
 };
+

@@ -1,6 +1,7 @@
-import { TimeCode } from "../_components/TimeLine/TimeLine";
+import { TimeCode } from "../components/time-line/TimeLine";
 import { IOnWatchTimeUpdated } from "../../types";
 import { SubtitleStyleConfig } from "../hooks/useSubtitleStyling";
+import { AdConfig } from "./AdTypes";
 
 export interface VideoPlayerProps {
   trackSrc: string;
@@ -35,7 +36,7 @@ export interface VideoPlayerProps {
   };
   nextEpisodeConfig?: { showAtTime?: number; showAtEnd?: boolean };
   subtitleStyle?: SubtitleStyleConfig;
-
+  ads?: AdConfig;
 }
 
 export type { SubtitleTrack, Episode } from "../../store/types/StoreTypes";

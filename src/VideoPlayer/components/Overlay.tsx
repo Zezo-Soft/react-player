@@ -1,5 +1,4 @@
-import * as React from "react";
-import { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import VideoPlayerControls from "../MediaControls/VideoPlayerControls";
 import { IPlayerConfig } from "../../types";
@@ -20,6 +19,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     setCountdownTime,
     videoRef,
     currentEpisodeIndex,
+    isAdPlaying,
   } = useVideoStore();
 
   const { onClose } = config?.headerConfig?.config || {};
@@ -76,9 +76,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       setCurrentEpisodeIndex(nextIndex);
       setAutoPlayNext(true);
       videoRef.src = episodeList[nextIndex].url;
-      videoRef
-        .play()
-        .catch((err: Error) => console.error("Manual play failed:", err));
+      videoRef.play().catch(() => undefined);
       setShowCountdown(false);
       setCountdownTime(10);
 
@@ -95,7 +93,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
       className="absolute inset-0"
       onMouseMove={handleMouseEnter}
     >
-      {controls && <VideoPlayerControls config={config} />}
+      {controls && !isAdPlaying && <VideoPlayerControls config={config} />}
 
       {showCountdown &&
         episodeList.length > 0 &&

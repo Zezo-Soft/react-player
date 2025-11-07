@@ -9,6 +9,7 @@ import {
   createSubtitlesSlice,
   createEpisodesSlice,
   createIntroSlice,
+  createAdsSlice,
   createResetSlice,
 } from "./slices";
 
@@ -21,5 +22,6 @@ export const useVideoStore = create<VideoState>()((set, get, store) => ({
   ...createSubtitlesSlice(set, get, store),
   ...createEpisodesSlice(set, get, store),
   ...createIntroSlice(set, get, store),
+  ...createAdsSlice(set, get, store),
   ...createResetSlice(set, get, store),
 }));

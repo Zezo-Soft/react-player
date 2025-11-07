@@ -5,3 +5,4 @@ export { useVideoTracking } from "./useVideoTracking";
 export { useIntroSkip } from "./useIntroSkip";
 export { useEpisodes } from "./useEpisodes";
 export { useVideoEvents } from "./useVideoEvents";
+export { useAdManager } from "./useAdManager";

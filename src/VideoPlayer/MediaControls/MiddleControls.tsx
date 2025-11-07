@@ -22,10 +22,17 @@ const ControlButton: React.FC<ControlButtonProps> = ({
 );
 
 const MiddleControls: React.FC = () => {
-  const { videoRef, isPlaying, setIsPlaying } = useVideoStore();
+  const {
+    videoRef,
+    adVideoRef,
+    isPlaying,
+    setIsPlaying,
+    isAdPlaying,
+  } = useVideoStore();
   const [isBuffering, setIsBuffering] = useState(false);
 
-  const videoElement = videoRef;
+  // Use ad video ref during ads, otherwise use main video ref
+  const videoElement = isAdPlaying ? adVideoRef : videoRef;
 
   const handlePlayPause = useCallback(() => {
     if (!videoElement) return;
@@ -34,7 +41,7 @@ const MiddleControls: React.FC = () => {
       videoElement
         .play()
         .then(() => setIsPlaying(true))
-        .catch((err: Error) => console.error("Error playing video:", err));
+        .catch(() => undefined);
     } else {
       videoElement.pause();
       setIsPlaying(false);
@@ -67,11 +74,11 @@ const MiddleControls: React.FC = () => {
       videoElement.removeEventListener("waiting", handleWaiting);
       videoElement.removeEventListener("playing", handlePlaying);
     };
-  }, [videoElement]);
+  }, [videoElement, isAdPlaying]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!videoElement) return;
+      if (!videoElement || isAdPlaying) return; // Disable keyboard controls during ads
 
       switch (e.code) {
         case "Space":
@@ -93,7 +100,52 @@ const MiddleControls: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [videoElement, handlePlayPause, handleBackward, handleForward]);
+  }, [
+    videoElement,
+    handlePlayPause,
+    handleBackward,
+    handleForward,
+    isAdPlaying,
+  ]);
+
+  // During ads, show only play/pause button
+  if (isAdPlaying) {
+    return (
+      <div className="flex justify-center items-center">
+        <ControlButton
+          onClick={handlePlayPause}
+          className="w-[10vw]"
+          icon={
+            isBuffering ? (
+              <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+            ) : isPlaying ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="icon-class"
+                fill="currentColor"
+                viewBox="0 0 67 67"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M46.332 5.773a4.125 4.125 0 0 0-4.125 4.125v46.75a4.127 4.127 0 0 0 4.125 4.125 4.127 4.127 0 0 0 4.125-4.125V9.898a4.125 4.125 0 0 0-4.125-4.125zM25.707 9.898v46.75a4.125 4.125 0 1 1-8.25 0V9.898a4.123 4.123 0 0 1 4.125-4.125 4.123 4.123 0 0 1 4.125 4.125z"
+                ></path>
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="icon-class"
+                fill="currentColor"
+                viewBox="0 0 67 67"
+              >
+                <path d="M20.28 9.65c-2.205-1.268-4.026-.228-4.026 2.307v43.805c0 2.535 1.82 3.574 4.027 2.307l38.471-21.903a2.556 2.556 0 0 0 1.094-.935 2.514 2.514 0 0 0 0-2.743 2.556 2.556 0 0 0-1.093-.936L20.28 9.65z"></path>
+              </svg>
+            )
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center">

@@ -1,14 +1,14 @@
 import * as React from "react";
 import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { IoMdClose } from "react-icons/io";
-import Tooltip from "../../components/ui/tooltip";
 import FullScreenToggle from "../../components/ui/FullScreenToggle";
 import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureToggle";
 import Settings from "../../components/ui/Settings";
 import { useVideoStore } from "../../store/VideoState";
 import { IControlsHeaderProps } from "../../types";
-import "../_components/styles/video-controls.css";
+import "../components/styles/video-controls.css";
 import screenfull from "screenfull";
+import Tooltip from "../../components/ui/Tooltip";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const iconClassName = "icon-button";
@@ -19,6 +19,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     episodeList,
     currentEpisodeIndex,
     resetStore,
+    isAdPlaying,
   } = useVideoStore();
 
   const [isPipActive, setIsPipActive] = React.useState(false);
@@ -61,8 +62,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         await document.exitPictureInPicture();
         setIsPipActive(false);
       }
-    } catch (error) {
-      console.error("PiP toggle failed:", error);
+    } catch (_error) {
+      // No-op: PiP may fail if not supported
     }
   };
 
@@ -84,25 +85,37 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     }
   };
 
+  const renderAdHeader = () => (
+    <div className="flex items-center gap-4">
+      <span className="inline-flex items-center rounded bg-[#2D2F31] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-yellow-500">
+        Ad
+      </span>
+    </div>
+  );
+
+  const renderVideoHeader = () => (
+    <div className="flex">
+      <div>
+        <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
+          {episodeList.length > 0
+            ? episodeList[currentEpisodeIndex]?.title
+            : config?.title}
+        </h1>
+        {config?.isTrailer && (
+          <p className="text-gray-300 text-sm lg:text-base font-normal">
+            Trailer
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
-      <div className="flex">
-        <div>
-          <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
-            {episodeList.length > 0
-              ? episodeList[currentEpisodeIndex]?.title
-              : config?.title}
-          </h1>
-          {config?.isTrailer && (
-            <p className="text-gray-300 text-sm lg:text-base font-normal">
-              Trailer
-            </p>
-          )}
-        </div>
-      </div>
+      {isAdPlaying ? renderAdHeader() : renderVideoHeader()}
 
       <div className="flex items-center gap-7 text-white">
-        <Settings iconClassName={iconClassName} />
+        {!isAdPlaying && <Settings iconClassName={iconClassName} />}
 
         <div onClick={handleMute}>
           {videoRef?.muted ? (
@@ -139,14 +152,16 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
           </div>
         </Tooltip>
 
-        <Tooltip
-          className="whitespace-nowrap"
-          title={isPipActive ? "Exit PiP" : "Enter PiP"}
-        >
-          <div onClick={handlePipToggle}>
-            <PiPictureInPictureToggle className={iconClassName} />
-          </div>
-        </Tooltip>
+        {!isAdPlaying && (
+          <Tooltip
+            className="whitespace-nowrap"
+            title={isPipActive ? "Exit PiP" : "Enter PiP"}
+          >
+            <div onClick={handlePipToggle}>
+              <PiPictureInPictureToggle className={iconClassName} />
+            </div>
+          </Tooltip>
+        )}
 
         {config?.onClose && (
           <>

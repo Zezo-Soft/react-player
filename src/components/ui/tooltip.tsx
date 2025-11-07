@@ -11,6 +11,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   children,
   title,
   position = "top",
+  className,
 }) => {
   const [visible, setVisible] = useState(false);
 
@@ -23,7 +24,7 @@ const Tooltip: React.FC<TooltipProps> = ({
 
   return (
     <div
-      className="relative inline-block cursor-pointer"
+      className={`relative inline-block cursor-pointer ${className || ""}`}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
     >

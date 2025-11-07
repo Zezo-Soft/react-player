@@ -13,3 +13,4 @@ export function getTimeScale(
 
   return isTimePassed ? 1 : currentScalePercent;
 }
+

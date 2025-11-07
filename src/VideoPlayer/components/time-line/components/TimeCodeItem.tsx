@@ -7,7 +7,7 @@ export interface TimeCode {
   description: string;
 }
 
-export interface Props {
+export interface TimeCodeItemProps {
   currentTime: number;
   seekHoverTime: number;
   bufferTime: number;
@@ -23,7 +23,7 @@ export interface Props {
   trackColor?: string;
 }
 
-export const TimeCodeItem: React.FC<Props> = memo(
+export const TimeCodeItem: React.FC<TimeCodeItemProps> = memo(
   ({
     label = "",
     startTime,
@@ -99,3 +99,4 @@ export const TimeCodeItem: React.FC<Props> = memo(
     );
   }
 );
+

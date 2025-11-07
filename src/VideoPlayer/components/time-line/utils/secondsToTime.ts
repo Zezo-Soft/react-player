@@ -18,3 +18,4 @@ export function millisecondsToTime(ms: number, offset = 0): Time {
     ss: sec < 10 ? `0${sec}` : sec.toString(),
   };
 }
+

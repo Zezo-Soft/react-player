@@ -1,5 +1,6 @@
 import Hls from "hls.js";
 import * as dashjs from "dashjs";
+import { AdBreak, AdType } from "../../VideoPlayer/types/AdTypes";
 
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
@@ -119,6 +120,28 @@ export interface StoreResetState {
   resetStore: () => void;
 }
 
+// Ads state (imported from adsSlice)
+export interface AdsState {
+  isAdPlaying: boolean;
+  setIsAdPlaying: (isAdPlaying: boolean) => void;
+  currentAd: AdBreak | null;
+  setCurrentAd: (ad: AdBreak | null) => void;
+  adType: AdType | null;
+  setAdType: (type: AdType | null) => void;
+  adCurrentTime: number;
+  setAdCurrentTime: (time: number) => void;
+  canSkipAd: boolean;
+  setCanSkipAd: (canSkip: boolean) => void;
+  skipCountdown: number;
+  setSkipCountdown: (countdown: number) => void;
+  playedAdBreaks: string[];
+  addPlayedAdBreak: (id: string) => void;
+  midRollQueue: AdBreak[];
+  setMidRollQueue: (queue: AdBreak[]) => void;
+  adVideoRef: HTMLVideoElement | null;
+  setAdVideoRef: (ref: HTMLVideoElement | null) => void;
+}
+
 // Combined video store state
 export interface VideoState
   extends VideoRefsState,
@@ -129,4 +152,5 @@ export interface VideoState
     SubtitlesState,
     EpisodesState,
     IntroState,
+    AdsState,
     StoreResetState {}
