@@ -29,10 +29,7 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     skipCountdown,
     setSkipCountdown,
     videoRef,
-    setMuted,
     muted,
-    setCurrentTime,
-    setBufferedProgress,
     setIsPlaying,
   } = useVideoStore();
 
@@ -135,14 +132,13 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     }
   }, [adVideoRef, setIsPlaying]);
 
-  // Handle ad video time updates and sync with main video store for controls
+  // Handle ad video time updates and keep the ad-specific store state in sync without touching the main playback timeline.
   useEffect(() => {
     if (!adVideoRef) return;
 
     const handleTimeUpdate = () => {
       const currentTime = adVideoRef.currentTime;
       setAdCurrentTime(currentTime);
-      setCurrentTime(currentTime);
 
       if (adBreak.skipable) {
         const remaining = skipAfter - currentTime;
@@ -166,29 +162,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
       setAdDuration(duration);
       setIsPlaying(!adVideoRef.paused);
       attemptAdPlayback();
-    };
-
-    const handleProgress = () => {
-      if (adVideoRef.buffered.length > 0 && adVideoRef.duration > 0) {
-        let bufferedEnd = 0;
-        for (let i = 0; i < adVideoRef.buffered.length; i++) {
-          if (
-            adVideoRef.currentTime >= adVideoRef.buffered.start(i) &&
-            adVideoRef.currentTime <= adVideoRef.buffered.end(i)
-          ) {
-            bufferedEnd = adVideoRef.buffered.end(i);
-            break;
-          }
-        }
-        if (bufferedEnd === 0 && adVideoRef.buffered.length > 0) {
-          bufferedEnd = adVideoRef.buffered.end(adVideoRef.buffered.length - 1);
-        }
-        const bufferedProgress = Math.min(
-          (bufferedEnd / adVideoRef.duration) * 100,
-          100
-        );
-        setBufferedProgress(bufferedProgress);
-      }
     };
 
     const handlePlay = () => {
@@ -216,7 +189,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
 
     adVideoRef.addEventListener("timeupdate", handleTimeUpdate);
     adVideoRef.addEventListener("loadedmetadata", handleLoadedMetadata);
-    adVideoRef.addEventListener("progress", handleProgress);
     adVideoRef.addEventListener("play", handlePlay);
     adVideoRef.addEventListener("pause", handlePause);
     adVideoRef.addEventListener("waiting", handleWaiting);
@@ -226,7 +198,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     return () => {
       adVideoRef.removeEventListener("timeupdate", handleTimeUpdate);
       adVideoRef.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      adVideoRef.removeEventListener("progress", handleProgress);
       adVideoRef.removeEventListener("play", handlePlay);
       adVideoRef.removeEventListener("pause", handlePause);
       adVideoRef.removeEventListener("waiting", handleWaiting);
@@ -239,8 +210,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     skipAfter,
     canSkipAd,
     setAdCurrentTime,
-    setCurrentTime,
-    setBufferedProgress,
     setIsPlaying,
     safelySetSkipCountdown,
     safelySetCanSkipAd,
@@ -253,7 +222,7 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
 
     if (adVideoRef.readyState === 0) {
       adVideoRef.volume = videoRef.volume;
-      adVideoRef.muted = videoRef.muted;
+      adVideoRef.muted = muted;
       adVideoRef.load();
     }
 
@@ -273,13 +242,12 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     };
   }, [adVideoRef, videoRef, attemptAdPlayback]);
 
-  // Sync mute state
+  // Keep the ad's mute flag aligned with the shared store so the header toggle behaves consistently.
   useEffect(() => {
-    if (adVideoRef && videoRef) {
-      adVideoRef.muted = videoRef.muted;
-      setMuted(videoRef.muted);
+    if (adVideoRef) {
+      adVideoRef.muted = muted;
     }
-  }, [adVideoRef, videoRef, muted, setMuted]);
+  }, [adVideoRef, muted]);
 
   const handleSkip = () => {
     if (canSkipAd && onSkip) {
@@ -312,7 +280,7 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
         <video
           ref={(ref) => {
             if (ref && ref !== adVideoRef) {
-              ref.muted = true;
+              ref.muted = muted;
               setAdVideoRef(ref);
               if (ref.src !== adBreak.adUrl) {
                 ref.src = adBreak.adUrl;

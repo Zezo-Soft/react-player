@@ -1,4 +1,5 @@
 import React from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./components/Overlay";
 import SubtitleOverlay from "./components/SubtitleOverlay";
@@ -51,9 +52,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     isAdPlaying,
     currentAd,
     adType,
-  } = useVideoStore();
+    setMuted,
+  } = useVideoStore(
+    useShallow((state) => ({
+      setVideoRef: state.setVideoRef,
+      setVideoWrapperRef: state.setVideoWrapperRef,
+      videoRef: state.videoRef,
+      isAdPlaying: state.isAdPlaying,
+      currentAd: state.currentAd,
+      adType: state.adType,
+      setMuted: state.setMuted,
+    }))
+  );
 
-  const hasPreRoll = React.useMemo(() => Boolean(ads?.preRoll), [ads?.preRoll]);
+  const effectiveAds = React.useMemo(
+    () => (isTrailer ? undefined : ads),
+    [ads, isTrailer]
+  );
+  const hasPreRoll = React.useMemo(
+    () => Boolean(effectiveAds?.preRoll),
+    [effectiveAds?.preRoll]
+  );
   const [initialAdStarted, setInitialAdStarted] = React.useState(
     () => !hasPreRoll
   );
@@ -103,8 +122,35 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [hasPreRoll, initialAdFinished, videoRef]);
 
+  React.useEffect(() => {
+    if (!videoRef) return;
+
+    const syncMutedState = () => {
+      setMuted(videoRef.muted);
+    };
+
+    // Ensure the global store mirrors the element's mute flag — this keeps UI controls and both media elements aligned.
+    syncMutedState();
+    videoRef.addEventListener("volumechange", syncMutedState);
+
+    return () => {
+      videoRef.removeEventListener("volumechange", syncMutedState);
+    };
+  }, [videoRef, setMuted]);
+
   const shouldCoverMainVideo = hasPreRoll && !initialAdFinished;
   const shouldShowPlaceholder = shouldCoverMainVideo && !isAdPlaying;
+
+  React.useEffect(() => {
+    const element = videoRef;
+    return () => {
+      if (!element) return;
+      // Ensure the primary media element stops buffering/playing when the player unmounts
+      element.pause();
+      element.removeAttribute("src");
+      element.load();
+    };
+  }, [videoRef]);
 
   useVideoSource(trackSrc, type);
   useSubtitles(subtitles);
@@ -123,7 +169,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   } = useVideoEvents();
 
   // Ad management
-  const { skipAd } = useAdManager(ads);
+  const { skipAd } = useAdManager(effectiveAds);
 
   return (
     <div

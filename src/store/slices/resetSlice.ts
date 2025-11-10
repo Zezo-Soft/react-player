@@ -8,6 +8,41 @@ export const createResetSlice: StateCreator<
   StoreResetState
 > = (set, get) => ({
   resetStore: () => {
+    const safeStopMediaElement = (media: HTMLVideoElement | null) => {
+      if (!media) return;
+      try {
+        media.pause();
+      } catch (_error) {
+        // Already paused or unavailable; nothing else to do.
+      }
+      try {
+        media.currentTime = 0;
+      } catch (_error) {
+        // Some browser streams reject seeks without metadata; ignore and keep tearing down.
+      }
+      media.removeAttribute("src");
+      media.load();
+    };
+
+    const {
+      videoRef,
+      adVideoRef,
+      hlsInstance,
+      dashInstance,
+    } = get();
+
+    // Stop any active media to ensure audio/video cannot continue after the store resets.
+    safeStopMediaElement(videoRef);
+    safeStopMediaElement(adVideoRef);
+
+    if (hlsInstance && typeof hlsInstance.destroy === "function") {
+      hlsInstance.destroy();
+    }
+
+    if (dashInstance && typeof dashInstance.reset === "function") {
+      dashInstance.reset();
+    }
+
     set({
       videoRef: null,
       videoWrapperRef: null,
@@ -22,6 +57,7 @@ export const createResetSlice: StateCreator<
       controls: false,
       isFullscreen: false,
       hlsInstance: undefined,
+      dashInstance: undefined,
       qualityLevels: undefined,
       activeQuality: "auto",
       activeSubtitle: null,

@@ -9,6 +9,7 @@ import { IControlsHeaderProps } from "../../types";
 import "../components/styles/video-controls.css";
 import screenfull from "screenfull";
 import Tooltip from "../../components/ui/Tooltip";
+import { useShallow } from "zustand/react/shallow";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const iconClassName = "icon-button";
@@ -16,11 +17,26 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const {
     videoWrapperRef,
     videoRef,
+    adVideoRef,
     episodeList,
     currentEpisodeIndex,
     resetStore,
     isAdPlaying,
-  } = useVideoStore();
+    muted,
+    setMuted,
+  } = useVideoStore(
+    useShallow((state) => ({
+      videoWrapperRef: state.videoWrapperRef,
+      videoRef: state.videoRef,
+      adVideoRef: state.adVideoRef,
+      episodeList: state.episodeList,
+      currentEpisodeIndex: state.currentEpisodeIndex,
+      resetStore: state.resetStore,
+      isAdPlaying: state.isAdPlaying,
+      muted: state.muted,
+      setMuted: state.setMuted,
+    }))
+  );
 
   const [isPipActive, setIsPipActive] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -47,9 +63,20 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   }, []);
 
   const handleMute = () => {
-    if (videoRef) {
-      videoRef.muted = !videoRef.muted;
+    const targetElement = isAdPlaying ? adVideoRef ?? videoRef : videoRef;
+    if (!targetElement) return;
+
+    const nextMuted = !targetElement.muted;
+
+    // Keep both media elements synchronised so the mute toggle feels consistent across ads and main content.
+    if (videoRef && videoRef.muted !== nextMuted) {
+      videoRef.muted = nextMuted;
     }
+    if (adVideoRef && adVideoRef.muted !== nextMuted) {
+      adVideoRef.muted = nextMuted;
+    }
+
+    setMuted(nextMuted);
   };
 
   const handlePipToggle = async () => {
@@ -111,14 +138,14 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   );
 
   return (
-    <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
+    <div className="flex items-center justify-between p-10 bg-linear-to-b from-black">
       {isAdPlaying ? renderAdHeader() : renderVideoHeader()}
 
       <div className="flex items-center gap-7 text-white">
         {!isAdPlaying && <Settings iconClassName={iconClassName} />}
 
         <div onClick={handleMute}>
-          {videoRef?.muted ? (
+          {muted ? (
             <Tooltip title="Unmute">
               <IoVolumeMuteOutline className={iconClassName} />
             </Tooltip>
