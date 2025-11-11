@@ -12,26 +12,16 @@ export const createResetSlice: StateCreator<
       if (!media) return;
       try {
         media.pause();
-      } catch (_error) {
-        // Already paused or unavailable; nothing else to do.
-      }
+      } catch (_error) {}
       try {
         media.currentTime = 0;
-      } catch (_error) {
-        // Some browser streams reject seeks without metadata; ignore and keep tearing down.
-      }
+      } catch (_error) {}
       media.removeAttribute("src");
       media.load();
     };
 
-    const {
-      videoRef,
-      adVideoRef,
-      hlsInstance,
-      dashInstance,
-    } = get();
+    const { videoRef, adVideoRef, hlsInstance, dashInstance } = get();
 
-    // Stop any active media to ensure audio/video cannot continue after the store resets.
     safeStopMediaElement(videoRef);
     safeStopMediaElement(adVideoRef);
 

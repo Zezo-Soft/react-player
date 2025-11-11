@@ -68,7 +68,6 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 
     const nextMuted = !targetElement.muted;
 
-    // Keep both media elements synchronised so the mute toggle feels consistent across ads and main content.
     if (videoRef && videoRef.muted !== nextMuted) {
       videoRef.muted = nextMuted;
     }
@@ -89,9 +88,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         await document.exitPictureInPicture();
         setIsPipActive(false);
       }
-    } catch (_error) {
-      // No-op: PiP may fail if not supported
-    }
+    } catch (_error) {}
   };
 
   React.useEffect(() => {

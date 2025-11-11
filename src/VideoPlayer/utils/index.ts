@@ -68,4 +68,4 @@ export const getExtensionFromUrl = (url: string) => {
   return extension;
 };
 
-export { QualityManager } from './qualityManager';
+export { QualityManager } from "./qualityManager";

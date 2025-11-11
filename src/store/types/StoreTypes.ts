@@ -26,7 +26,6 @@ export interface VideoPlaybackState {
   setVolume: (volume: number) => void;
 }
 
-// Video timing and progress
 export interface VideoTimingState {
   currentTime: number;
   setCurrentTime: (currentTime: number) => void;
@@ -36,7 +35,6 @@ export interface VideoTimingState {
   setBufferedProgress: (progress: number) => void;
 }
 
-// Video controls and UI
 export interface VideoControlsState {
   controls: boolean;
   setControls: (controls: boolean) => void;
@@ -47,35 +45,35 @@ export interface VideoControlsState {
   setControlsVisible: (visible: boolean) => void;
 }
 
-// Video quality state
 export interface VideoQualityState {
-  hlsInstance?: Hls | null; // null for native HLS, undefined when not available
+  hlsInstance?: Hls | null;
   setHlsInstance: (hlsInstance: Hls | null) => void;
-  
+
   dashInstance?: dashjs.MediaPlayerClass;
   setDashInstance: (dashInstance: dashjs.MediaPlayerClass) => void;
-  
+
   qualityLevels?: Array<{
     height: number;
     bitrate?: number;
     originalIndex: number;
-    id?: string; // For DASH
-  }>;
-  setQualityLevels: (qualityLevels: Array<{
-    height: number;
-    bitrate?: number;
-    originalIndex: number;
     id?: string;
-  }>) => void;
-  
+  }>;
+  setQualityLevels: (
+    qualityLevels: Array<{
+      height: number;
+      bitrate?: number;
+      originalIndex: number;
+      id?: string;
+    }>
+  ) => void;
+
   activeQuality: string;
   setActiveQuality: (activeQuality: string) => void;
-  
+
   streamType: "hls" | "dash" | "mp4" | "other";
   setStreamType: (streamType: "hls" | "dash" | "mp4" | "other") => void;
 }
 
-// Subtitle types and state
 export interface SubtitleTrack {
   lang: string;
   label: string;
@@ -89,7 +87,6 @@ export interface SubtitlesState {
   setSubtitles: (subtitles: SubtitleTrack[]) => void;
 }
 
-// Episode types and state
 export interface Episode {
   id: number;
   title: string;
@@ -109,18 +106,15 @@ export interface EpisodesState {
   setAutoPlayNext: (value: boolean) => void;
 }
 
-// Intro skip state
 export interface IntroState {
   showIntroSkip: boolean;
   setShowIntroSkip: (show: boolean) => void;
 }
 
-// Store reset functionality
 export interface StoreResetState {
   resetStore: () => void;
 }
 
-// Ads state (imported from adsSlice)
 export interface AdsState {
   isAdPlaying: boolean;
   setIsAdPlaying: (isAdPlaying: boolean) => void;
@@ -142,7 +136,6 @@ export interface AdsState {
   setAdVideoRef: (ref: HTMLVideoElement | null) => void;
 }
 
-// Combined video store state
 export interface VideoState
   extends VideoRefsState,
     VideoPlaybackState,

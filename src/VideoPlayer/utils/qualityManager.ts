@@ -4,16 +4,6 @@ import { useVideoStore } from "../../store/VideoState";
 
 export type StreamType = "hls" | "dash" | "mp4" | "other";
 
-/**
- * Video Quality Management Utility
- * Provides a unified interface for quality switching across HLS.js and DASH.js
- *
- * This utility follows OTT-grade best practices for smooth quality switching:
- * - Immediate quality changes without playback interruption
- * - Proper ABR (Adaptive Bitrate) control
- * - Error handling and fallback mechanisms
- * - Support for both manual and auto quality modes
- */
 export class QualityManager {
   /**
    * Set video quality for HLS streams with OTT-grade smoothness
@@ -31,20 +21,15 @@ export class QualityManager {
     hlsInstance: Hls | null | undefined,
     levelIndex: number
   ): void {
-    // If hlsInstance is undefined, it means it's not available
     if (hlsInstance === undefined) {
       return;
     }
 
-    // For native HLS, we can't control quality directly
-    // In a real implementation, you would need to provide different HLS streams
-    // For now, we'll log that quality switching isn't supported for native HLS
     if (hlsInstance === null) {
       return;
     }
 
     try {
-      // Validate level index
       if (
         levelIndex < -1 ||
         (levelIndex >= 0 && !(hlsInstance as any).levels?.[levelIndex])
@@ -52,32 +37,20 @@ export class QualityManager {
         return;
       }
 
-      // For auto quality, enable ABR and reset capping
       if (levelIndex === -1) {
         hlsInstance.currentLevel = -1;
         hlsInstance.autoLevelCapping = -1;
         hlsInstance.nextLevel = -1;
       } else {
-        // For manual quality, set the level and cap ABR to prevent switching
-        // This ensures the selected quality is maintained
         hlsInstance.currentLevel = levelIndex;
         hlsInstance.autoLevelCapping = levelIndex;
         hlsInstance.nextLevel = levelIndex;
       }
-    } catch (_error) {
-      // Ignore quality switching errors to avoid disrupting playback
-    }
+    } catch (_error) {}
   }
 
   /**
-   * Set video quality for DASH streams with OTT-grade smoothness
-   *
-   * Best practices implemented:
-   * 1. Use autoSwitchBitrate settings to control ABR behavior
-   * 2. Use setRepresentationForTypeById for immediate quality change
-   * 3. Handle representation discovery and selection properly
-   * 4. Provide visual feedback through console logs
-   *
+
    * @param dashInstance DASH.js instance
    * @param qualityId Quality level ID (undefined/null for auto)
    */
@@ -90,7 +63,6 @@ export class QualityManager {
     }
 
     try {
-      // Enable auto quality switching (ABR)
       if (!qualityId) {
         dashInstance.updateSettings({
           streaming: {
@@ -100,7 +72,6 @@ export class QualityManager {
           },
         });
       } else {
-        // Disable auto switching for video and set specific quality
         dashInstance.updateSettings({
           streaming: {
             abr: {
@@ -109,7 +80,6 @@ export class QualityManager {
           },
         });
 
-        // Get available representations and find the target one
         const representations = (dashInstance as any).getRepresentationsByType(
           "video"
         );
@@ -124,20 +94,15 @@ export class QualityManager {
           return;
         }
 
-        // Set the specific quality representation
         (dashInstance as any).setRepresentationForTypeById(
           "video",
           targetRepresentation.id
         );
       }
-    } catch (_error) {
-      // Ignore quality switching errors to avoid disrupting playback
-    }
+    } catch (_error) {}
   }
 
   /**
-   * Get available quality levels for HLS with proper error handling
-   *
    * @param hlsInstance HLS.js instance
    * @returns Array of quality level objects
    */
@@ -160,8 +125,6 @@ export class QualityManager {
   }
 
   /**
-   * Get available quality levels for DASH with proper error handling
-   *
    * @param dashInstance DASH.js instance
    * @returns Array of quality level objects
    */
@@ -181,7 +144,7 @@ export class QualityManager {
       }
 
       return representations.map((rep: any) => ({
-        height: rep.height || Math.round(rep.bandwidth / 1000) || 0, // Approximate height from bitrate
+        height: rep.height || Math.round(rep.bandwidth / 1000) || 0,
         bitrate: rep.bandwidth,
         id: rep.id,
       }));
@@ -191,9 +154,6 @@ export class QualityManager {
   }
 
   /**
-   * Unified quality setting function that works with both HLS and DASH
-   * Provides a single interface for quality management across streaming technologies
-   *
    * @param streamType Type of stream (hls, dash, etc.)
    * @param qualityIdentifier Quality level identifier (index for HLS, ID for DASH)
    */
@@ -232,7 +192,6 @@ export class QualityManager {
             );
             setActiveQuality(qualityIdentifier);
           } else if (typeof qualityIdentifier === "number") {
-            // For DASH, we should use string IDs, but handle numbers as auto
             this.setDashQuality(dashInstance!, null);
             setActiveQuality("auto");
           }
@@ -241,14 +200,10 @@ export class QualityManager {
         default:
           return;
       }
-    } catch (_error) {
-      // Ignore switching errors to keep playback uninterrupted
-    }
+    } catch (_error) {}
   }
 
   /**
-   * Enable auto quality switching for the current stream type
-   *
    * @param streamType Type of stream (hls, dash, etc.)
    */
   static setAutoQuality(streamType: StreamType): void {

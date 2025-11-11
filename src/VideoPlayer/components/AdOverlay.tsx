@@ -57,7 +57,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     [setSkipCountdown]
   );
 
-  // Auto-hide controls after 3 seconds
   useEffect(() => {
     if (isHovered) {
       setShowControls(true);
@@ -97,7 +96,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     setRequiresInteraction(false);
   }, [adBreak.id]);
 
-  // Initialize skip countdown based on ad playback time
   useEffect(() => {
     if (!adBreak.skipable) {
       safelySetCanSkipAd(false);
@@ -132,7 +130,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     }
   }, [adVideoRef, setIsPlaying]);
 
-  // Handle ad video time updates and keep the ad-specific store state in sync without touching the main playback timeline.
   useEffect(() => {
     if (!adVideoRef) return;
 
@@ -216,7 +213,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     attemptAdPlayback,
   ]);
 
-  // Sync volume with main video and load ad
   useEffect(() => {
     if (!adVideoRef || !videoRef) return;
 
@@ -242,7 +238,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     };
   }, [adVideoRef, videoRef, attemptAdPlayback]);
 
-  // Keep the ad's mute flag aligned with the shared store so the header toggle behaves consistently.
   useEffect(() => {
     if (adVideoRef) {
       adVideoRef.muted = muted;
@@ -307,15 +302,13 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
         )}
       </div>
 
-      {/* Controls Overlay - Using existing components */}
       <div
         className={`absolute inset-0 transition-all duration-300 ${
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 flex flex-col justify-between">
-          {/* Header - Using ControlsHeader (ad badge is shown in ControlsHeader) */}
-          <div className="flex-shrink-0 relative">
+        <div className="absolute inset-0 bg-linear-to-b from-black/80 via-transparent to-black/90 flex flex-col justify-between">
+          <div className="shrink-0 relative">
             <ControlsHeader
               config={{
                 title:
@@ -327,15 +320,11 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
               }}
             />
           </div>
-
-          {/* Middle - Using MiddleControls (only play/pause during ads) */}
           <div className="flex-1 flex items-center justify-center">
             <MiddleControls />
           </div>
 
-          {/* Bottom - Sponsored label, seek slider and timers */}
-          <div className="flex-shrink-0 relative">
-            {/* Skip button above slider */}
+          <div className="shrink-0 relative">
             {adBreak.skipable && (
               <div className="px-10 pb-3 flex justify-end">
                 <button
@@ -358,7 +347,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
               </div>
             )}
 
-            {/* Read-only seek slider */}
             <div className="px-10 pb-4">
               <div className="relative h-1 bg-white/20 rounded-full overflow-hidden pointer-events-none select-none">
                 <div
@@ -372,7 +360,6 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
               </div>
             </div>
 
-            {/* Bottom controls with skip button */}
             <div className="px-10 pb-6 flex items-center justify-between">
               <div className="flex items-center gap-4 text-white">
                 <span className="text-lg lg:text-2xl font-semibold">

@@ -129,7 +129,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setMuted(videoRef.muted);
     };
 
-    // Ensure the global store mirrors the element's mute flag — this keeps UI controls and both media elements aligned.
     syncMutedState();
     videoRef.addEventListener("volumechange", syncMutedState);
 
@@ -145,7 +144,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const element = videoRef;
     return () => {
       if (!element) return;
-      // Ensure the primary media element stops buffering/playing when the player unmounts
       element.pause();
       element.removeAttribute("src");
       element.load();
@@ -168,7 +166,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     onEnded: onEndedHook,
   } = useVideoEvents();
 
-  // Ad management
   const { skipAd } = useAdManager(effectiveAds);
 
   return (

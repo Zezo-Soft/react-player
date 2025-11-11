@@ -1,4 +1,3 @@
-/* Ad Overlay Styles */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -39,7 +38,6 @@
   animation: slide-up 0.3s ease-out;
 }
 
-/* Ad Progress Bar Animation */
 .ad-progress-bar {
   position: relative;
   overflow: hidden;
@@ -70,7 +68,6 @@
   }
 }
 
-/* Ad Badge Styles */
 .ad-badge {
   background: linear-gradient(
     135deg,
@@ -82,7 +79,6 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Ad Button Hover Effects */
 .ad-button {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -96,7 +92,6 @@
   transform: translateY(0);
 }
 
-/* Skip Button Styles */
 .skip-button-enabled {
   background: linear-gradient(
     135deg,
@@ -142,7 +137,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .ad-controls {
     padding: 1rem;
@@ -177,7 +171,6 @@
   }
 }
 
-/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-slide-up,
@@ -190,7 +183,6 @@
   }
 }
 
-/* High Contrast Mode */
 @media (prefers-contrast: high) {
   .ad-badge {
     background: #000;

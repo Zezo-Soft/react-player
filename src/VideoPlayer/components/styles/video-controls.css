@@ -17,7 +17,6 @@
   }
 }
 
-/* styles/fullscreen-toggle.css */
 .fullscreen-icon {
   width: 20px;
   height: 20px;
@@ -37,7 +36,6 @@
   }
 }
 
-/* styles/pi-picture-in-picture-toggle.css */
 .pip-toggle {
   cursor: pointer;
   color: #9ca3af;
@@ -59,4 +57,3 @@
     height: 28px;
   }
 }
-

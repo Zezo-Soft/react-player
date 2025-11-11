@@ -61,19 +61,14 @@ export const useAdManager = (adConfig?: AdConfig) => {
     if (!media) return;
     try {
       media.pause();
-    } catch (_error) {
-      // Element might already be paused; this is safe to ignore.
-    }
+    } catch (_error) {}
     try {
       media.currentTime = 0;
-    } catch (_error) {
-      // Some live streams reject scrubbing prior to metadata; ignore to continue cleanup.
-    }
+    } catch (_error) {}
     media.removeAttribute("src");
     media.load();
   }, []);
 
-  // Initialize mid-roll queue with smart placement
   useEffect(() => {
     if (!adConfig?.midRoll || adConfig.midRoll.length === 0) {
       setMidRollQueue([]);
@@ -82,7 +77,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
     let sortedMidRolls = [...adConfig.midRoll].sort((a, b) => a.time - b.time);
 
-    // Apply smart placement if enabled
     if (adConfig.smartPlacement?.enabled) {
       sortedMidRolls = applySmartPlacement(
         sortedMidRolls,
@@ -94,7 +88,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
     setMidRollQueue(sortedMidRolls);
   }, [adConfig?.midRoll, adConfig?.smartPlacement, duration, setMidRollQueue]);
 
-  // Helper function for smart ad placement
   const applySmartPlacement = (
     ads: AdBreak[],
     videoDuration: number,
@@ -104,7 +97,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
     const minGap = options.minGapBetweenAds || 30;
     const avoidNearEnd = options.avoidNearEnd || 10;
 
-    // Don't apply smart placement if video is too short
     if (videoDuration < minVideoDuration) {
       return [];
     }
@@ -113,13 +105,10 @@ export const useAdManager = (adConfig?: AdConfig) => {
     let lastAdTime = 0;
 
     for (const ad of ads) {
-      // Skip ads that are too early
       if (ad.time < minGap) continue;
 
-      // Skip ads too close to the end
       if (ad.time > videoDuration - avoidNearEnd) continue;
 
-      // Skip ads too close to previous ad
       if (ad.time - lastAdTime < minGap) continue;
 
       validAds.push(ad);
@@ -132,41 +121,32 @@ export const useAdManager = (adConfig?: AdConfig) => {
     return validAds;
   };
 
-  // Handle pre-roll ad
   const playPreRollAd = async () => {
     if (!adConfig?.preRoll || preRollPlayedRef.current || !videoRef) return;
 
     const adBreak = adConfig.preRoll;
     preRollPlayedRef.current = true;
-    resumeAfterAdRef.current = true; // Pre-roll ads should hand control back to the main content automatically.
+    resumeAfterAdRef.current = true;
 
-    // Tear down any lingering ad media before we spin up a new break to avoid overlapping audio.
     stopMediaElement(useVideoStore.getState().adVideoRef);
 
-    // Pause main video
     videoRef.pause();
     setPlaying(false);
     setIsPlaying(false);
 
-    // Set ad state
     setIsAdPlaying(true);
     setCurrentAd(adBreak);
     setAdType("pre-roll");
 
-    // Callback
     adConfig.onAdStart?.(adBreak);
-
-    // Ad video will be played by AdOverlay component when ref is set
   };
 
-  // Handle mid-roll ads
   const checkMidRollAds = () => {
     if (!videoRef || isAdPlaying || midRollQueue.length === 0) return;
 
     const nextAd = midRollQueue[0];
     if (!nextAd) return;
 
-    // Check if we've reached the ad time and haven't played this ad yet
     if (currentTime >= nextAd.time && !playedAdBreaks.includes(nextAd.id)) {
       playMidRollAd(nextAd);
     }
@@ -175,56 +155,42 @@ export const useAdManager = (adConfig?: AdConfig) => {
   const playMidRollAd = async (adBreak: AdBreak) => {
     if (!videoRef || isAdPlaying) return;
 
-    // Remove from queue
     const updatedQueue = midRollQueue.filter((ad) => ad.id !== adBreak.id);
     setMidRollQueue(updatedQueue);
 
-    // Mark as played
     addPlayedAdBreak(adBreak.id);
 
-    // Pause main video
     const wasPlaying = !videoRef.paused;
     videoRef.pause();
     setPlaying(false);
     setIsPlaying(false);
-    resumeAfterAdRef.current = wasPlaying; // Only resume if the viewer had the main video playing pre-break.
+    resumeAfterAdRef.current = wasPlaying;
 
-    // Make sure any previous ad element releases its resources before the new one mounts.
     stopMediaElement(useVideoStore.getState().adVideoRef);
 
-    // Set ad state
     setIsAdPlaying(true);
     setCurrentAd(adBreak);
     setAdType("mid-roll");
 
-    // Callback
     adConfig?.onAdStart?.(adBreak);
-
-    // Ad video will be played by AdOverlay component when ref is set
   };
 
-  // Handle post-roll ad
   const playPostRollAd = async () => {
     if (!adConfig?.postRoll || postRollPlayedRef.current || !videoRef) return;
 
     const adBreak = adConfig.postRoll;
     postRollPlayedRef.current = true;
-    resumeAfterAdRef.current = false; // Post-rolls mark the end of playback; avoid auto-resume.
+    resumeAfterAdRef.current = false;
 
     stopMediaElement(useVideoStore.getState().adVideoRef);
 
-    // Set ad state
     setIsAdPlaying(true);
     setCurrentAd(adBreak);
     setAdType("post-roll");
 
-    // Callback
     adConfig.onAdStart?.(adBreak);
-
-    // Ad video will be played by AdOverlay component when ref is set
   };
 
-  // End ad and resume video
   const endAd = useCallback(() => {
     const currentAdState = useVideoStore.getState().currentAd;
     const adTypeState = useVideoStore.getState().adType;
@@ -233,14 +199,11 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
     if (!videoRefState || !currentAdState) return;
 
-    // Stop ad video
     if (adVideoRefState) {
-      // Force-stop the ad element so audio/video cannot linger after the overlay closes.
       stopMediaElement(adVideoRefState);
       setAdVideoRef(null);
     }
 
-    // Reset ad state
     setIsAdPlaying(false);
     setCurrentAd(null);
     setAdType(null);
@@ -248,10 +211,8 @@ export const useAdManager = (adConfig?: AdConfig) => {
     setCanSkipAd(false);
     setSkipCountdown(0);
 
-    // Callback
     adConfig?.onAdEnd?.(currentAdState);
 
-    // Resume main video (except for post-roll)
     if (resumeAfterAdRef.current && adTypeState !== "post-roll") {
       videoRefState.play().catch(() => undefined);
       setPlaying(true);
@@ -272,18 +233,14 @@ export const useAdManager = (adConfig?: AdConfig) => {
     stopMediaElement,
   ]);
 
-  // Skip ad
   const skipAd = () => {
     if (!currentAd || !currentAd.skipable) return;
 
-    // Callback
     adConfig?.onAdSkip?.(currentAd);
 
-    // End ad
     endAd();
   };
 
-  // Handle ad video ended
   useEffect(() => {
     if (!adVideoRef || !isAdPlaying) return;
 
@@ -304,9 +261,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
         if (adVideoRef.currentTime > configuredDuration) {
           try {
             adVideoRef.currentTime = configuredDuration;
-          } catch (_error) {
-            // Some DRM streams may reject seeking; best effort only.
-          }
+          } catch (_error) {}
         }
         if (!forcedEndTriggered) {
           forcedEndTriggered = true;
@@ -328,17 +283,14 @@ export const useAdManager = (adConfig?: AdConfig) => {
     if (isAdPlaying || !adVideoRef) {
       return;
     }
-    // Defensive clean-up to stop any orphaned ad media once the overlay disappears.
     stopMediaElement(adVideoRef);
     setAdVideoRef(null);
   }, [isAdPlaying, adVideoRef, setAdVideoRef, stopMediaElement]);
 
-  // Play pre-roll ad when video is ready
   useEffect(() => {
     if (!videoRef || !adConfig?.preRoll || preRollPlayedRef.current) return;
 
     const handleCanPlay = () => {
-      // Small delay to ensure video is ready
       setTimeout(() => {
         playPreRollAd();
       }, 500);
@@ -351,7 +303,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
     };
   }, [videoRef, adConfig?.preRoll]);
 
-  // Check for mid-roll ads periodically
   useEffect(() => {
     if (!videoRef || !adConfig?.midRoll || isAdPlaying) {
       if (midRollCheckIntervalRef.current) {
@@ -361,7 +312,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
       return;
     }
 
-    // Check every second
     midRollCheckIntervalRef.current = setInterval(() => {
       const state = useVideoStore.getState();
       if (
@@ -378,28 +328,23 @@ export const useAdManager = (adConfig?: AdConfig) => {
         state.currentTime >= nextAd.time &&
         !state.playedAdBreaks.includes(nextAd.id)
       ) {
-        // Remove from queue
         const updatedQueue = state.midRollQueue.filter(
           (ad) => ad.id !== nextAd.id
         );
         state.setMidRollQueue(updatedQueue);
 
-        // Mark as played
         state.addPlayedAdBreak(nextAd.id);
 
-        // Pause main video
         const wasPlaying = !state.videoRef?.paused;
         state.videoRef?.pause();
         state.setPlaying(false);
         state.setIsPlaying(false);
         resumeAfterAdRef.current = wasPlaying;
 
-        // Set ad state
         state.setIsAdPlaying(true);
         state.setCurrentAd(nextAd);
         state.setAdType("mid-roll");
 
-        // Callback
         adConfig?.onAdStart?.(nextAd);
       }
     }, 1000);
@@ -412,12 +357,10 @@ export const useAdManager = (adConfig?: AdConfig) => {
     };
   }, [videoRef, isAdPlaying, adConfig]);
 
-  // Handle video ended for post-roll
   useEffect(() => {
     if (!videoRef || !adConfig?.postRoll || postRollPlayedRef.current) return;
 
     const handleVideoEnded = () => {
-      // Small delay before showing post-roll ad
       setTimeout(() => {
         playPostRollAd();
       }, 500);
@@ -430,7 +373,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
     };
   }, [videoRef, adConfig?.postRoll]);
 
-  // Reset ad state when video source changes
   useEffect(() => {
     if (!videoRef?.src) return;
 
@@ -449,7 +391,6 @@ export const useAdManager = (adConfig?: AdConfig) => {
       setMidRollQueue([]);
     }
 
-    // Ensure any previous ad media element releases its resources when the source switches.
     const lingeringAdRef = useVideoStore.getState().adVideoRef;
     if (lingeringAdRef) {
       stopMediaElement(lingeringAdRef);

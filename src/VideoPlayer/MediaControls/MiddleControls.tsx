@@ -22,16 +22,10 @@ const ControlButton: React.FC<ControlButtonProps> = ({
 );
 
 const MiddleControls: React.FC = () => {
-  const {
-    videoRef,
-    adVideoRef,
-    isPlaying,
-    setIsPlaying,
-    isAdPlaying,
-  } = useVideoStore();
+  const { videoRef, adVideoRef, isPlaying, setIsPlaying, isAdPlaying } =
+    useVideoStore();
   const [isBuffering, setIsBuffering] = useState(false);
 
-  // Use ad video ref during ads, otherwise use main video ref
   const videoElement = isAdPlaying ? adVideoRef : videoRef;
 
   const handlePlayPause = useCallback(() => {
@@ -78,7 +72,7 @@ const MiddleControls: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!videoElement || isAdPlaying) return; // Disable keyboard controls during ads
+      if (!videoElement || isAdPlaying) return;
 
       switch (e.code) {
         case "Space":
@@ -108,7 +102,6 @@ const MiddleControls: React.FC = () => {
     isAdPlaying,
   ]);
 
-  // During ads, show only play/pause button
   if (isAdPlaying) {
     return (
       <div className="flex justify-center items-center">

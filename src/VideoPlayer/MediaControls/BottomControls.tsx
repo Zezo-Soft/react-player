@@ -10,7 +10,6 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
     useVideoStore();
   const duration = videoRef?.duration;
 
-  // Don't show seek bar during ads
   if (isAdPlaying) {
     return null;
   }

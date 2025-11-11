@@ -6,33 +6,25 @@ import { getExtensionFromUrl } from "../utils";
 import { StreamType } from "../utils/qualityManager";
 import { useShallow } from "zustand/react/shallow";
 
-/**
- * Video Source Hook
- * 
- * Manages video source loading and streaming technology detection
- * Supports HLS.js, DASH.js, and native HTML5 video
- * 
- * Features:
- * - Automatic stream type detection
- * - HLS.js fallback for older browsers
- * - DASH.js support with proper initialization
- * - Quality level extraction for all stream types
- * - Error handling and cleanup
- */
 export const useVideoSource = (
   trackSrc: string,
   type?: "hls" | "mp4" | "dash" | "other" | "youtube" | undefined
 ) => {
-  const { videoRef, setQualityLevels, setHlsInstance, setDashInstance, setStreamType } =
-    useVideoStore(
-      useShallow((state) => ({
-        videoRef: state.videoRef,
-        setQualityLevels: state.setQualityLevels,
-        setHlsInstance: state.setHlsInstance,
-        setDashInstance: state.setDashInstance,
-        setStreamType: state.setStreamType,
-      }))
-    );
+  const {
+    videoRef,
+    setQualityLevels,
+    setHlsInstance,
+    setDashInstance,
+    setStreamType,
+  } = useVideoStore(
+    useShallow((state) => ({
+      videoRef: state.videoRef,
+      setQualityLevels: state.setQualityLevels,
+      setHlsInstance: state.setHlsInstance,
+      setDashInstance: state.setDashInstance,
+      setStreamType: state.setStreamType,
+    }))
+  );
 
   useEffect(() => {
     if (!videoRef) return;
@@ -41,7 +33,6 @@ export const useVideoSource = (
     const contentType = type || getVideoExtension;
     let teardown: (() => void) | undefined;
 
-    // Tell downstream consumers which streaming strategy is active.
     setStreamType(contentType as StreamType);
 
     const ensureFallbackSrc = () => {
@@ -154,7 +145,9 @@ export const useVideoSource = (
 
         const handleManifestLoaded = () => {
           try {
-            const representations = (player as any).getRepresentationsByType("video");
+            const representations = (player as any).getRepresentationsByType(
+              "video"
+            );
             if (representations && representations.length > 0) {
               const levels = representations.map((rep: any, index: number) => ({
                 height: rep.height || Math.round(rep.bandwidth / 1000) || 0,
@@ -201,10 +194,17 @@ export const useVideoSource = (
       videoRef.pause();
       videoRef.removeAttribute("src");
       videoRef.load();
-      // Guarantee the store reflects the stopped state so nothing keeps rendering or playing in the background.
       const { setIsPlaying, setBufferedProgress } = useVideoStore.getState();
       setIsPlaying(false);
       setBufferedProgress(0);
     };
-  }, [trackSrc, videoRef, type, setQualityLevels, setHlsInstance, setDashInstance, setStreamType]);
+  }, [
+    trackSrc,
+    videoRef,
+    type,
+    setQualityLevels,
+    setHlsInstance,
+    setDashInstance,
+    setStreamType,
+  ]);
 };
