@@ -13,7 +13,7 @@ export interface VideoPlayerProps {
   trackPoster?: string;
   isTrailer?: boolean;
   className?: string;
-  type?: "hls" | "mp4" | "other" | "youtube" | undefined;
+  type?: "hls" | "dash" | "mp4" | "other" | "youtube" | undefined;
   width?: string;
   height?: string;
   onClose?: () => void;
@@ -37,6 +37,7 @@ export interface VideoPlayerProps {
   nextEpisodeConfig?: { showAtTime?: number; showAtEnd?: boolean };
   subtitleStyle?: SubtitleStyleConfig;
   ads?: AdConfig;
+  resumeFrom?: number;
 }
 
 export type { SubtitleTrack, Episode } from "../../store/types/StoreTypes";

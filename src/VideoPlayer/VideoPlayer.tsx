@@ -14,6 +14,7 @@ import {
   useEpisodes,
   useVideoEvents,
   useAdManager,
+  usePrimaryVideoLifecycle,
 } from "./hooks";
 import AdOverlay from "./components/AdOverlay";
 import "../index.css";
@@ -44,24 +45,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   showControls = true,
   isMute = false,
   ads,
+  resumeFrom,
 }) => {
-  const {
-    setVideoRef,
-    setVideoWrapperRef,
-    videoRef,
-    isAdPlaying,
-    currentAd,
-    adType,
-    setMuted,
-  } = useVideoStore(
+  const { setVideoWrapperRef } = useVideoStore(
     useShallow((state) => ({
-      setVideoRef: state.setVideoRef,
       setVideoWrapperRef: state.setVideoWrapperRef,
-      videoRef: state.videoRef,
-      isAdPlaying: state.isAdPlaying,
-      currentAd: state.currentAd,
-      adType: state.adType,
-      setMuted: state.setMuted,
     }))
   );
 
@@ -73,82 +61,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     () => Boolean(effectiveAds?.preRoll),
     [effectiveAds?.preRoll]
   );
-  const [initialAdStarted, setInitialAdStarted] = React.useState(
-    () => !hasPreRoll
-  );
-  const [initialAdFinished, setInitialAdFinished] = React.useState(
-    () => !hasPreRoll
-  );
-
-  React.useEffect(() => {
-    if (hasPreRoll) {
-      setInitialAdStarted(false);
-      setInitialAdFinished(false);
-    } else {
-      setInitialAdStarted(true);
-      setInitialAdFinished(true);
-    }
-  }, [trackSrc, hasPreRoll]);
-
-  React.useEffect(() => {
-    if (
-      hasPreRoll &&
-      !initialAdStarted &&
-      isAdPlaying &&
-      adType === "pre-roll"
-    ) {
-      setInitialAdStarted(true);
-    }
-  }, [hasPreRoll, initialAdStarted, isAdPlaying, adType]);
-
-  const previousIsAdPlayingRef = React.useRef(isAdPlaying);
-  React.useEffect(() => {
-    const previouslyPlaying = previousIsAdPlayingRef.current;
-    if (
-      hasPreRoll &&
-      initialAdStarted &&
-      previouslyPlaying &&
-      !isAdPlaying &&
-      !initialAdFinished
-    ) {
-      setInitialAdFinished(true);
-    }
-    previousIsAdPlayingRef.current = isAdPlaying;
-  }, [hasPreRoll, initialAdStarted, initialAdFinished, isAdPlaying]);
-
-  React.useEffect(() => {
-    if (hasPreRoll && !initialAdFinished && videoRef) {
-      videoRef.pause();
-    }
-  }, [hasPreRoll, initialAdFinished, videoRef]);
-
-  React.useEffect(() => {
-    if (!videoRef) return;
-
-    const syncMutedState = () => {
-      setMuted(videoRef.muted);
-    };
-
-    syncMutedState();
-    videoRef.addEventListener("volumechange", syncMutedState);
-
-    return () => {
-      videoRef.removeEventListener("volumechange", syncMutedState);
-    };
-  }, [videoRef, setMuted]);
-
-  const shouldCoverMainVideo = hasPreRoll && !initialAdFinished;
-  const shouldShowPlaceholder = shouldCoverMainVideo && !isAdPlaying;
-
-  React.useEffect(() => {
-    const element = videoRef;
-    return () => {
-      if (!element) return;
-      element.pause();
-      element.removeAttribute("src");
-      element.load();
-    };
-  }, [videoRef]);
+  const {
+    registerVideoRef,
+    videoRef,
+    isAdPlaying,
+    currentAd,
+    adType,
+    initialAdFinished,
+    shouldCoverMainVideo,
+    shouldShowPlaceholder,
+  } = usePrimaryVideoLifecycle({
+    hasPreRoll,
+    trackSrc,
+  });
 
   useVideoSource(trackSrc, type);
   useSubtitles(subtitles);
@@ -164,7 +89,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     onPlay,
     onPause,
     onEnded: onEndedHook,
-  } = useVideoEvents();
+  } = useVideoEvents(resumeFrom);
 
   const { skipAd } = useAdManager(effectiveAds);
 
@@ -184,8 +109,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       <video
         playsInline
-        preload="metadata"
-        ref={setVideoRef}
+        preload={hasPreRoll ? "metadata" : "auto"}
+        ref={registerVideoRef}
         onSeeked={onSeeked}
         poster={trackPoster}
         crossOrigin="anonymous"

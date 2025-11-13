@@ -291,12 +291,14 @@ export const useAdManager = (adConfig?: AdConfig) => {
     if (!videoRef || !adConfig?.preRoll || preRollPlayedRef.current) return;
 
     const handleCanPlay = () => {
-      setTimeout(() => {
-        playPreRollAd();
-      }, 500);
+      playPreRollAd();
     };
 
     videoRef.addEventListener("canplay", handleCanPlay, { once: true });
+
+    if (videoRef.readyState >= 2) {
+      playPreRollAd();
+    }
 
     return () => {
       videoRef.removeEventListener("canplay", handleCanPlay);

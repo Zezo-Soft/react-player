@@ -8,8 +8,7 @@ import React, {
 import { useVideoStore } from "../../store/VideoState";
 import { AdBreak } from "../types/AdTypes";
 import { SkipForward } from "lucide-react";
-import ControlsHeader from "../MediaControls/ControlsHeader";
-import MiddleControls from "../MediaControls/MiddleControls";
+import { ControlsHeader, MiddleControls } from "./controls";
 import { IPlayerConfig } from "../../types";
 
 interface AdOverlayProps {

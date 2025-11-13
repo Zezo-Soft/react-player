@@ -2,7 +2,7 @@ import * as React from "react";
 import BottomControls from "./BottomControls";
 import ControlsHeader from "./ControlsHeader";
 import MiddleControls from "./MiddleControls";
-import { IPlayerConfig } from "../../types";
+import { IPlayerConfig } from "../../../types";
 
 const VideoPlayerControls: React.FC<IPlayerConfig> = ({ config }) => {
   return (
@@ -17,3 +17,5 @@ const VideoPlayerControls: React.FC<IPlayerConfig> = ({ config }) => {
 };
 
 export default VideoPlayerControls;
+
+

@@ -2,6 +2,8 @@ import Hls from "hls.js";
 import * as dashjs from "dashjs";
 import { AdBreak, AdType } from "../../VideoPlayer/types/AdTypes";
 
+export type StreamType = "hls" | "dash" | "mp4" | "other";
+
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
   setVideoRef: (ref: HTMLVideoElement) => void;
@@ -40,19 +42,16 @@ export interface VideoControlsState {
   setControls: (controls: boolean) => void;
   isFullscreen: boolean;
   setIsFullscreen: (isFullscreen: boolean) => void;
-
-  controlsVisible: boolean;
-  setControlsVisible: (visible: boolean) => void;
 }
 
 export interface VideoQualityState {
-  hlsInstance?: Hls | null;
+  hlsInstance: Hls | null;
   setHlsInstance: (hlsInstance: Hls | null) => void;
 
-  dashInstance?: dashjs.MediaPlayerClass;
-  setDashInstance: (dashInstance: dashjs.MediaPlayerClass) => void;
+  dashInstance: dashjs.MediaPlayerClass | null;
+  setDashInstance: (dashInstance: dashjs.MediaPlayerClass | null) => void;
 
-  qualityLevels?: Array<{
+  qualityLevels: Array<{
     height: number;
     bitrate?: number;
     originalIndex: number;
@@ -70,8 +69,11 @@ export interface VideoQualityState {
   activeQuality: string;
   setActiveQuality: (activeQuality: string) => void;
 
-  streamType: "hls" | "dash" | "mp4" | "other";
-  setStreamType: (streamType: "hls" | "dash" | "mp4" | "other") => void;
+  currentQuality: string;
+  setCurrentQuality: (currentQuality: string) => void;
+
+  streamType: StreamType;
+  setStreamType: (streamType: StreamType) => void;
 }
 
 export interface SubtitleTrack {

@@ -1,8 +1,7 @@
 import Hls from "hls.js";
 import * as dashjs from "dashjs";
 import { useVideoStore } from "../../store/VideoState";
-
-export type StreamType = "hls" | "dash" | "mp4" | "other";
+import { StreamType } from "../../store/types/StoreTypes";
 
 export class QualityManager {
   /**
@@ -21,32 +20,24 @@ export class QualityManager {
     hlsInstance: Hls | null | undefined,
     levelIndex: number
   ): void {
-    if (hlsInstance === undefined) {
+    if (!hlsInstance) return;
+
+    const levels = (hlsInstance as any)?.levels ?? [];
+    const levelExists = levelIndex >= 0 && levels[levelIndex];
+    if (levelIndex < -1 || (levelIndex >= 0 && !levelExists)) {
       return;
     }
 
-    if (hlsInstance === null) {
+    if (levelIndex === -1) {
+      hlsInstance.currentLevel = -1;
+      hlsInstance.nextLevel = -1;
+      hlsInstance.loadLevel = -1;
       return;
     }
 
-    try {
-      if (
-        levelIndex < -1 ||
-        (levelIndex >= 0 && !(hlsInstance as any).levels?.[levelIndex])
-      ) {
-        return;
-      }
-
-      if (levelIndex === -1) {
-        hlsInstance.currentLevel = -1;
-        hlsInstance.autoLevelCapping = -1;
-        hlsInstance.nextLevel = -1;
-      } else {
-        hlsInstance.currentLevel = levelIndex;
-        hlsInstance.autoLevelCapping = levelIndex;
-        hlsInstance.nextLevel = levelIndex;
-      }
-    } catch (_error) {}
+    hlsInstance.loadLevel = levelIndex;
+    hlsInstance.nextLevel = levelIndex;
+    hlsInstance.currentLevel = levelIndex;
   }
 
   /**
@@ -55,51 +46,30 @@ export class QualityManager {
    * @param qualityId Quality level ID (undefined/null for auto)
    */
   static setDashQuality(
-    dashInstance: dashjs.MediaPlayerClass,
-    qualityId: string | null | undefined
+    dashInstance: dashjs.MediaPlayerClass | undefined | null,
+    qualityIndex: number | null | undefined
   ): void {
-    if (!dashInstance) {
+    if (!dashInstance) return;
+
+    const player = dashInstance as unknown as {
+      setAutoSwitchQualityFor(type: "video", enabled: boolean): void;
+      getQualityFor(type: "video"): number;
+      setQualityFor(type: "video", value: number): void;
+    };
+
+    if (
+      qualityIndex === null ||
+      qualityIndex === undefined ||
+      qualityIndex < 0
+    ) {
+      player.setAutoSwitchQualityFor("video", true);
       return;
     }
 
-    try {
-      if (!qualityId) {
-        dashInstance.updateSettings({
-          streaming: {
-            abr: {
-              autoSwitchBitrate: { audio: true, video: true },
-            },
-          },
-        });
-      } else {
-        dashInstance.updateSettings({
-          streaming: {
-            abr: {
-              autoSwitchBitrate: { audio: true, video: false },
-            },
-          },
-        });
-
-        const representations = (dashInstance as any).getRepresentationsByType(
-          "video"
-        );
-        if (!representations || !representations.length) {
-          return;
-        }
-
-        const targetRepresentation = representations.find(
-          (rep: any) => rep.id === qualityId
-        );
-        if (!targetRepresentation) {
-          return;
-        }
-
-        (dashInstance as any).setRepresentationForTypeById(
-          "video",
-          targetRepresentation.id
-        );
-      }
-    } catch (_error) {}
+    player.setAutoSwitchQualityFor("video", false);
+    if (player.getQualityFor("video") !== qualityIndex) {
+      player.setQualityFor("video", qualityIndex);
+    }
   }
 
   /**
@@ -157,50 +127,40 @@ export class QualityManager {
    * @param streamType Type of stream (hls, dash, etc.)
    * @param qualityIdentifier Quality level identifier (index for HLS, ID for DASH)
    */
-  static setQuality(
-    streamType: StreamType,
-    qualityIdentifier: string | number
-  ): void {
-    const { hlsInstance, dashInstance, setActiveQuality } =
+  static setQuality(streamType: StreamType, qualityIdentifier: string): void {
+    const { hlsInstance, dashInstance, setActiveQuality, setCurrentQuality } =
       useVideoStore.getState();
 
-    try {
-      switch (streamType) {
-        case "hls":
-          if (typeof qualityIdentifier === "string") {
-            const levelIndex =
-              qualityIdentifier === "auto"
-                ? -1
-                : parseInt(qualityIdentifier, 10);
-            if (!isNaN(levelIndex)) {
-              this.setHlsQuality(hlsInstance, levelIndex);
-              setActiveQuality(qualityIdentifier);
-            }
-          } else if (typeof qualityIdentifier === "number") {
-            this.setHlsQuality(hlsInstance, qualityIdentifier);
-            setActiveQuality(
-              qualityIdentifier === -1 ? "auto" : qualityIdentifier.toString()
-            );
-          }
-          break;
+    if (qualityIdentifier === "auto") {
+      if (streamType === "hls") this.setHlsQuality(hlsInstance, -1);
+      if (streamType === "dash")
+        this.setDashQuality(dashInstance ?? null, null);
+      setActiveQuality("auto");
+      setCurrentQuality("auto");
+      return;
+    }
 
-        case "dash":
-          if (typeof qualityIdentifier === "string") {
-            this.setDashQuality(
-              dashInstance!,
-              qualityIdentifier === "auto" ? null : qualityIdentifier
-            );
-            setActiveQuality(qualityIdentifier);
-          } else if (typeof qualityIdentifier === "number") {
-            this.setDashQuality(dashInstance!, null);
-            setActiveQuality("auto");
-          }
-          break;
+    const parseIndex = (prefix: string) =>
+      parseInt(qualityIdentifier.replace(prefix, ""), 10);
 
-        default:
-          return;
+    if (streamType === "hls" && qualityIdentifier.startsWith("hls-")) {
+      const levelIndex = parseIndex("hls-");
+      if (!Number.isNaN(levelIndex)) {
+        this.setHlsQuality(hlsInstance, levelIndex);
+        setActiveQuality(qualityIdentifier);
+        setCurrentQuality(qualityIdentifier);
       }
-    } catch (_error) {}
+      return;
+    }
+
+    if (streamType === "dash" && qualityIdentifier.startsWith("dash-")) {
+      const levelIndex = parseIndex("dash-");
+      if (!Number.isNaN(levelIndex)) {
+        this.setDashQuality(dashInstance ?? null, levelIndex);
+        setActiveQuality(qualityIdentifier);
+        setCurrentQuality(qualityIdentifier);
+      }
+    }
   }
 
   /**

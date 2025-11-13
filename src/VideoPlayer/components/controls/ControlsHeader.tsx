@@ -1,14 +1,14 @@
 import * as React from "react";
 import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { IoMdClose } from "react-icons/io";
-import FullScreenToggle from "../../components/ui/FullScreenToggle";
-import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureToggle";
-import Settings from "../../components/ui/Settings";
-import { useVideoStore } from "../../store/VideoState";
-import { IControlsHeaderProps } from "../../types";
-import "../components/styles/video-controls.css";
+import FullScreenToggle from "../../../components/ui/FullScreenToggle";
+import PiPictureInPictureToggle from "../../../components/ui/PiPictureInPictureToggle";
+import Settings from "../../../components/ui/Settings";
+import { useVideoStore } from "../../../store/VideoState";
+import { IControlsHeaderProps } from "../../../types";
+import "../styles/video-controls.css";
 import screenfull from "screenfull";
-import Tooltip from "../../components/ui/Tooltip";
+import Tooltip from "../../../components/ui/Tooltip";
 import { useShallow } from "zustand/react/shallow";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
@@ -203,3 +203,5 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 };
 
 export default ControlsHeader;
+
+
