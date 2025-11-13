@@ -13,6 +13,7 @@ export default defineConfig({
     "react",
     "react-dom",
     "zustand",
+    "zustand/react/shallow",
     "lucide-react",
     "hls.js",
     "react-icons/io",

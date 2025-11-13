@@ -37,7 +37,6 @@ export interface VideoPlayerProps {
   nextEpisodeConfig?: { showAtTime?: number; showAtEnd?: boolean };
   subtitleStyle?: SubtitleStyleConfig;
   ads?: AdConfig;
-  resumeFrom?: number;
 }
 
 export type { SubtitleTrack, Episode } from "../../store/types/StoreTypes";

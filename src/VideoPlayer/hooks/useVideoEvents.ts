@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import { useShallow } from "zustand/react/shallow";
 
-export const useVideoEvents = (resumeFrom?: number) => {
+export const useVideoEvents = () => {
   const { setCurrentTime, setDuration, setBufferedProgress, setIsPlaying } =
     useVideoStore(
       useShallow((state) => ({
@@ -19,40 +19,6 @@ export const useVideoEvents = (resumeFrom?: number) => {
   const pendingBufferedRef = useRef<number | null>(null);
   const timeUpdateRafRef = useRef<number | null>(null);
   const bufferedRafRef = useRef<number | null>(null);
-  const resumeAppliedRef = useRef(false);
-  const lastResumeRef = useRef<number | undefined>(undefined);
-  if (lastResumeRef.current !== resumeFrom) {
-    lastResumeRef.current = resumeFrom;
-    resumeAppliedRef.current = false;
-  }
-  const applyResumeIfNeeded = (video?: HTMLVideoElement | null) => {
-    if (resumeAppliedRef.current) return;
-    if (!video) return;
-    if (typeof resumeFrom !== "number") return;
-    if (!Number.isFinite(resumeFrom) || resumeFrom <= 0) return;
-
-    const { duration } = video;
-    const hasFiniteDuration =
-      typeof duration === "number" && !Number.isNaN(duration) && duration > 0;
-    const maxAllowed = hasFiniteDuration ? Math.max(duration - 0.1, 0) : null;
-    const targetTime =
-      maxAllowed === null
-        ? resumeFrom
-        : Math.min(Math.max(resumeFrom, 0), maxAllowed);
-
-    if (!Number.isFinite(targetTime)) {
-      return;
-    }
-
-    try {
-      video.currentTime = targetTime;
-      resumeAppliedRef.current = true;
-      setCurrentTime(targetTime);
-    } catch (_error) {
-      // Some media streams delay seek availability; we'll retry on the next relevant event.
-    }
-  };
-
   const stopMediaElement = (media?: HTMLMediaElement | null) => {
     if (!media) return;
     try {
@@ -127,7 +93,6 @@ export const useVideoEvents = (resumeFrom?: number) => {
 
   const onTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const time = e?.currentTarget?.currentTime;
-    applyResumeIfNeeded(e?.currentTarget);
     if (typeof time === "number" && !Number.isNaN(time)) {
       if (Math.abs(time - lastTimeUpdateRef.current) >= 0.1 || time === 0) {
         // Reduce the frequency of global state updates and batch them on the next animation frame for smoother playback.
@@ -142,7 +107,6 @@ export const useVideoEvents = (resumeFrom?: number) => {
       localStorage.setItem("current_time", "0");
       setDuration(duration);
     }
-    applyResumeIfNeeded(e?.currentTarget);
   };
 
   const onProgress = (e: React.SyntheticEvent<HTMLVideoElement>) => {
@@ -180,7 +144,6 @@ export const useVideoEvents = (resumeFrom?: number) => {
 
   const onPlay = () => {
     const state = useVideoStore.getState();
-    applyResumeIfNeeded(state.videoRef);
     if (state.adVideoRef) {
       // Defensive guard: ensure any ad media tears down before the primary stream resumes so stray audio cannot continue.
       stopMediaElement(state.adVideoRef);

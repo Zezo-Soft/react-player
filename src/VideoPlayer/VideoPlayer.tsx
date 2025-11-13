@@ -45,7 +45,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   showControls = true,
   isMute = false,
   ads,
-  resumeFrom,
 }) => {
   const { setVideoWrapperRef } = useVideoStore(
     useShallow((state) => ({
@@ -89,7 +88,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     onPlay,
     onPause,
     onEnded: onEndedHook,
-  } = useVideoEvents(resumeFrom);
+  } = useVideoEvents();
 
   const { skipAd } = useAdManager(effectiveAds);
 
