@@ -203,5 +203,3 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 };
 
 export default ControlsHeader;
-
-
