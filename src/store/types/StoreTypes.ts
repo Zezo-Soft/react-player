@@ -1,5 +1,8 @@
 import Hls from "hls.js";
 import * as dashjs from "dashjs";
+import { AdBreak, AdType } from "../../VideoPlayer/types/AdTypes";
+
+export type StreamType = "hls" | "dash" | "mp4" | "other";
 
 export interface VideoRefsState {
   videoRef: HTMLVideoElement | null;
@@ -25,7 +28,6 @@ export interface VideoPlaybackState {
   setVolume: (volume: number) => void;
 }
 
-// Video timing and progress
 export interface VideoTimingState {
   currentTime: number;
   setCurrentTime: (currentTime: number) => void;
@@ -35,46 +37,45 @@ export interface VideoTimingState {
   setBufferedProgress: (progress: number) => void;
 }
 
-// Video controls and UI
 export interface VideoControlsState {
   controls: boolean;
   setControls: (controls: boolean) => void;
   isFullscreen: boolean;
   setIsFullscreen: (isFullscreen: boolean) => void;
-
-  controlsVisible: boolean;
-  setControlsVisible: (visible: boolean) => void;
 }
 
-// Video quality state
 export interface VideoQualityState {
-  hlsInstance?: Hls | null; // null for native HLS, undefined when not available
+  hlsInstance: Hls | null;
   setHlsInstance: (hlsInstance: Hls | null) => void;
-  
-  dashInstance?: dashjs.MediaPlayerClass;
-  setDashInstance: (dashInstance: dashjs.MediaPlayerClass) => void;
-  
-  qualityLevels?: Array<{
-    height: number;
-    bitrate?: number;
-    originalIndex: number;
-    id?: string; // For DASH
-  }>;
-  setQualityLevels: (qualityLevels: Array<{
+
+  dashInstance: dashjs.MediaPlayerClass | null;
+  setDashInstance: (dashInstance: dashjs.MediaPlayerClass | null) => void;
+
+  qualityLevels: Array<{
     height: number;
     bitrate?: number;
     originalIndex: number;
     id?: string;
-  }>) => void;
-  
+  }>;
+  setQualityLevels: (
+    qualityLevels: Array<{
+      height: number;
+      bitrate?: number;
+      originalIndex: number;
+      id?: string;
+    }>
+  ) => void;
+
   activeQuality: string;
   setActiveQuality: (activeQuality: string) => void;
-  
-  streamType: "hls" | "dash" | "mp4" | "other";
-  setStreamType: (streamType: "hls" | "dash" | "mp4" | "other") => void;
+
+  currentQuality: string;
+  setCurrentQuality: (currentQuality: string) => void;
+
+  streamType: StreamType;
+  setStreamType: (streamType: StreamType) => void;
 }
 
-// Subtitle types and state
 export interface SubtitleTrack {
   lang: string;
   label: string;
@@ -88,7 +89,6 @@ export interface SubtitlesState {
   setSubtitles: (subtitles: SubtitleTrack[]) => void;
 }
 
-// Episode types and state
 export interface Episode {
   id: number;
   title: string;
@@ -108,18 +108,36 @@ export interface EpisodesState {
   setAutoPlayNext: (value: boolean) => void;
 }
 
-// Intro skip state
 export interface IntroState {
   showIntroSkip: boolean;
   setShowIntroSkip: (show: boolean) => void;
 }
 
-// Store reset functionality
 export interface StoreResetState {
   resetStore: () => void;
 }
 
-// Combined video store state
+export interface AdsState {
+  isAdPlaying: boolean;
+  setIsAdPlaying: (isAdPlaying: boolean) => void;
+  currentAd: AdBreak | null;
+  setCurrentAd: (ad: AdBreak | null) => void;
+  adType: AdType | null;
+  setAdType: (type: AdType | null) => void;
+  adCurrentTime: number;
+  setAdCurrentTime: (time: number) => void;
+  canSkipAd: boolean;
+  setCanSkipAd: (canSkip: boolean) => void;
+  skipCountdown: number;
+  setSkipCountdown: (countdown: number) => void;
+  playedAdBreaks: string[];
+  addPlayedAdBreak: (id: string) => void;
+  midRollQueue: AdBreak[];
+  setMidRollQueue: (queue: AdBreak[]) => void;
+  adVideoRef: HTMLVideoElement | null;
+  setAdVideoRef: (ref: HTMLVideoElement | null) => void;
+}
+
 export interface VideoState
   extends VideoRefsState,
     VideoPlaybackState,
@@ -129,4 +147,5 @@ export interface VideoState
     SubtitlesState,
     EpisodesState,
     IntroState,
+    AdsState,
     StoreResetState {}

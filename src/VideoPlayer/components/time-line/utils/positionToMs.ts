@@ -6,3 +6,4 @@ export function positionToMs(
   const percent = (position * 100) / trackWidth;
   return Math.floor(+(percent * (max / 100)));
 }
+

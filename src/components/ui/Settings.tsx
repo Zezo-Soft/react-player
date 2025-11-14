@@ -2,8 +2,9 @@ import * as React from "react";
 import { Check, ChevronRight } from "lucide-react";
 import Popover from "../ui/Popover";
 import { Settings as SettingsIcon } from "lucide-react";
-import Tooltip from "../ui/tooltip";
+import Tooltip from "../ui/Tooltip";
 import { useVideoStore } from "../../store/VideoState";
+import { QualityManager } from "../../VideoPlayer/utils";
 
 interface SettingsProps {
   iconClassName: string;
@@ -12,13 +13,13 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
   const {
     qualityLevels,
-    hlsInstance,
-    setActiveQuality,
     activeQuality,
+    currentQuality,
     subtitles,
     activeSubtitle,
     setActiveSubtitle,
     videoRef,
+    streamType,
   } = useVideoStore();
 
   const [speed, setSpeed] = React.useState(1);
@@ -33,48 +34,63 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
     }
   };
 
-  const uniqueQualityLevels = React.useMemo(() => {
-    if (!qualityLevels)
+  const isAdaptiveStream = streamType === "hls" || streamType === "dash";
+
+  const qualityOptions = React.useMemo(() => {
+    if (!qualityLevels || !isAdaptiveStream) {
       return [] as Array<{
+        value: string;
         height: number;
         bitrate?: number;
         originalIndex: number;
       }>;
-    const seenHeights = new Set<number>();
-    const unique: Array<{
-      height: number;
-      bitrate?: number;
-      originalIndex: number;
-    }> = [];
-    qualityLevels.forEach((level, originalIndex) => {
-      if (seenHeights.has(level.height)) return;
-      seenHeights.add(level.height);
-      unique.push({
+    }
+
+    const prefix = streamType === "dash" ? "dash" : "hls";
+
+    return [...qualityLevels]
+      .map((level) => ({
+        value: `${prefix}-${level.originalIndex}`,
         height: level.height,
         bitrate: level.bitrate,
-        originalIndex,
+        originalIndex: level.originalIndex,
+      }))
+      .sort((a, b) => {
+        const heightDiff = (b.height || 0) - (a.height || 0);
+        if (heightDiff !== 0) return heightDiff;
+        const bitrateDiff = (b.bitrate || 0) - (a.bitrate || 0);
+        if (bitrateDiff !== 0) return bitrateDiff;
+        return b.originalIndex - a.originalIndex;
       });
-    });
-    return unique;
-  }, [qualityLevels]);
+  }, [qualityLevels, isAdaptiveStream, streamType]);
 
   const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
   const handleBack = () => setActiveMenu("main");
 
-  // Get quality label for display
-  const getQualityLabel = () => {
-    if (activeQuality === "auto") return "Auto";
-    const level = uniqueQualityLevels.find(
-      (l) => String(l.height) === activeQuality
-    );
-    return level ? `${level.height}p` : "Auto";
+  const formatBitrate = (bitrate?: number) => {
+    if (!bitrate || bitrate <= 0) return "";
+    if (bitrate >= 1_000_000) {
+      return `${(bitrate / 1_000_000).toFixed(1)} Mbps`;
+    }
+    return `${Math.round(bitrate / 1000)} Kbps`;
   };
 
   // Get quality label: show explicit resolution to avoid duplicates
-  const getQualityName = (height: number) => {
-    if (!height || height <= 0) return "Auto";
-    return `${height}p`;
+  const getQualityName = (height: number, bitrate?: number) => {
+    if (height && height > 0) return `${height}p`;
+    const bitrateLabel = formatBitrate(bitrate);
+    return bitrateLabel || "Quality";
+  };
+
+  // Get quality label for display
+  const getQualityLabel = () => {
+    if (!isAdaptiveStream) return "Auto";
+    if (currentQuality === "auto") return "Auto";
+    const option = qualityOptions.find((q) => q.value === currentQuality);
+    if (!option) return "Auto";
+    const label = getQualityName(option.height, option.bitrate);
+    return label === "Quality" ? "Custom" : label;
   };
 
   // Get estimated data usage using bitrate when available
@@ -220,15 +236,17 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                 {/* Auto Quality */}
                 <button
                   onClick={() => {
-                    if (hlsInstance) {
-                      hlsInstance.currentLevel = -1;
-                      setActiveQuality("auto");
+                    if (isAdaptiveStream) {
+                      QualityManager.setQuality(streamType, "auto");
                     }
                   }}
+                  disabled={!isAdaptiveStream}
                   className={`w-full text-left px-4 py-3 rounded-md transition-all ${
                     activeQuality === "auto"
                       ? "bg-white/10"
-                      : "hover:bg-white/5"
+                      : isAdaptiveStream
+                      ? "hover:bg-white/5"
+                      : "opacity-50 cursor-not-allowed"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -247,18 +265,15 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                 </button>
 
                 {/* Quality Levels */}
-                {uniqueQualityLevels
-                  .map((level) => (
+                {isAdaptiveStream && qualityOptions.length > 0 ? (
+                  qualityOptions.map((level) => (
                     <button
-                      key={level.originalIndex}
-                      onClick={() => {
-                        if (hlsInstance) {
-                          hlsInstance.currentLevel = level.originalIndex;
-                          setActiveQuality(String(level.height));
-                        }
-                      }}
+                      key={level.value}
+                      onClick={() =>
+                        QualityManager.setQuality(streamType, level.value)
+                      }
                       className={`w-full text-left px-4 py-3 rounded-md transition-all ${
-                        activeQuality === String(level.height)
+                        activeQuality === level.value
                           ? "bg-white/10"
                           : "hover:bg-white/5"
                       }`}
@@ -266,19 +281,24 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="text-white font-semibold text-lg mb-1">
-                            {getQualityName(level.height)}
+                            {getQualityName(level.height, level.bitrate)}
                           </div>
                           <div className="text-gray-400 text-sm">
                             {getDataUsage(level.height, level.bitrate)}
                           </div>
                         </div>
-                        {activeQuality === String(level.height) && (
+                        {(activeQuality === level.value ||
+                          currentQuality === level.value) && (
                           <Check className="w-6 h-6 text-white mt-1" />
                         )}
                       </div>
                     </button>
                   ))
-                  .reverse()}
+                ) : (
+                  <div className="px-4 py-3 text-gray-400 text-sm bg-white/5 rounded-md">
+                    Quality selection is unavailable for this stream.
+                  </div>
+                )}
               </div>
             </div>
           )}

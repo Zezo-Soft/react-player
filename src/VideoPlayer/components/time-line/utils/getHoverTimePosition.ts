@@ -20,3 +20,4 @@ export function getHoverTimePosition(
 
   return { transform: `translateX(${position}px)` };
 }
+

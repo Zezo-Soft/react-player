@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { getHoverTimePosition } from "../utils/getHoverTimePosition";
 import { timeToTimeString } from "../utils/timeToTimeString";
 
-interface Props {
+interface HoverTimeWithPreviewProps {
   max: number;
   hoverTimeValue: number;
   trackWidth: number;
@@ -16,7 +16,7 @@ interface Props {
   getPreviewScreenUrl?: (hoverTimeValue: number) => string;
 }
 
-export const HoverTimeWithPreview: React.FC<Props> = ({
+export const HoverTimeWithPreview: React.FC<HoverTimeWithPreviewProps> = ({
   max,
   hoverTimeValue,
   offset,
@@ -67,3 +67,4 @@ export const HoverTimeWithPreview: React.FC<Props> = ({
     </div>
   );
 };
+

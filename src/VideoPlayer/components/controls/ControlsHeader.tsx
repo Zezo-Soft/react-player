@@ -1,14 +1,15 @@
 import * as React from "react";
 import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { IoMdClose } from "react-icons/io";
-import Tooltip from "../../components/ui/tooltip";
-import FullScreenToggle from "../../components/ui/FullScreenToggle";
-import PiPictureInPictureToggle from "../../components/ui/PiPictureInPictureToggle";
-import Settings from "../../components/ui/Settings";
-import { useVideoStore } from "../../store/VideoState";
-import { IControlsHeaderProps } from "../../types";
-import "../_components/styles/video-controls.css";
+import FullScreenToggle from "../../../components/ui/FullScreenToggle";
+import PiPictureInPictureToggle from "../../../components/ui/PiPictureInPictureToggle";
+import Settings from "../../../components/ui/Settings";
+import { useVideoStore } from "../../../store/VideoState";
+import { IControlsHeaderProps } from "../../../types";
+import "../styles/video-controls.css";
 import screenfull from "screenfull";
+import Tooltip from "../../../components/ui/Tooltip";
+import { useShallow } from "zustand/react/shallow";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const iconClassName = "icon-button";
@@ -16,10 +17,26 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const {
     videoWrapperRef,
     videoRef,
+    adVideoRef,
     episodeList,
     currentEpisodeIndex,
     resetStore,
-  } = useVideoStore();
+    isAdPlaying,
+    muted,
+    setMuted,
+  } = useVideoStore(
+    useShallow((state) => ({
+      videoWrapperRef: state.videoWrapperRef,
+      videoRef: state.videoRef,
+      adVideoRef: state.adVideoRef,
+      episodeList: state.episodeList,
+      currentEpisodeIndex: state.currentEpisodeIndex,
+      resetStore: state.resetStore,
+      isAdPlaying: state.isAdPlaying,
+      muted: state.muted,
+      setMuted: state.setMuted,
+    }))
+  );
 
   const [isPipActive, setIsPipActive] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -46,9 +63,19 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   }, []);
 
   const handleMute = () => {
-    if (videoRef) {
-      videoRef.muted = !videoRef.muted;
+    const targetElement = isAdPlaying ? adVideoRef ?? videoRef : videoRef;
+    if (!targetElement) return;
+
+    const nextMuted = !targetElement.muted;
+
+    if (videoRef && videoRef.muted !== nextMuted) {
+      videoRef.muted = nextMuted;
     }
+    if (adVideoRef && adVideoRef.muted !== nextMuted) {
+      adVideoRef.muted = nextMuted;
+    }
+
+    setMuted(nextMuted);
   };
 
   const handlePipToggle = async () => {
@@ -61,9 +88,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         await document.exitPictureInPicture();
         setIsPipActive(false);
       }
-    } catch (error) {
-      console.error("PiP toggle failed:", error);
-    }
+    } catch (_error) {}
   };
 
   React.useEffect(() => {
@@ -84,28 +109,40 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     }
   };
 
-  return (
-    <div className="flex items-center justify-between p-10 bg-gradient-to-b from-black">
-      <div className="flex">
-        <div>
-          <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
-            {episodeList.length > 0
-              ? episodeList[currentEpisodeIndex]?.title
-              : config?.title}
-          </h1>
-          {config?.isTrailer && (
-            <p className="text-gray-300 text-sm lg:text-base font-normal">
-              Trailer
-            </p>
-          )}
-        </div>
+  const renderAdHeader = () => (
+    <div className="flex items-center gap-4">
+      <span className="inline-flex items-center rounded bg-[#2D2F31] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-yellow-500">
+        Ad
+      </span>
+    </div>
+  );
+
+  const renderVideoHeader = () => (
+    <div className="flex">
+      <div>
+        <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
+          {episodeList.length > 0
+            ? episodeList[currentEpisodeIndex]?.title
+            : config?.title}
+        </h1>
+        {config?.isTrailer && (
+          <p className="text-gray-300 text-sm lg:text-base font-normal">
+            Trailer
+          </p>
+        )}
       </div>
+    </div>
+  );
+
+  return (
+    <div className="flex items-center justify-between p-10 bg-linear-to-b from-black">
+      {isAdPlaying ? renderAdHeader() : renderVideoHeader()}
 
       <div className="flex items-center gap-7 text-white">
-        <Settings iconClassName={iconClassName} />
+        {!isAdPlaying && <Settings iconClassName={iconClassName} />}
 
         <div onClick={handleMute}>
-          {videoRef?.muted ? (
+          {muted ? (
             <Tooltip title="Unmute">
               <IoVolumeMuteOutline className={iconClassName} />
             </Tooltip>
@@ -139,14 +176,16 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
           </div>
         </Tooltip>
 
-        <Tooltip
-          className="whitespace-nowrap"
-          title={isPipActive ? "Exit PiP" : "Enter PiP"}
-        >
-          <div onClick={handlePipToggle}>
-            <PiPictureInPictureToggle className={iconClassName} />
-          </div>
-        </Tooltip>
+        {!isAdPlaying && (
+          <Tooltip
+            className="whitespace-nowrap"
+            title={isPipActive ? "Exit PiP" : "Enter PiP"}
+          >
+            <div onClick={handlePipToggle}>
+              <PiPictureInPictureToggle className={iconClassName} />
+            </div>
+          </Tooltip>
+        )}
 
         {config?.onClose && (
           <>
@@ -164,3 +203,5 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 };
 
 export default ControlsHeader;
+
+

@@ -1,7 +1,8 @@
 import React from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useVideoStore } from "../store/VideoState";
-import Overlay from "./_components/Overlay";
-import SubtitleOverlay from "./_components/SubtitleOverlay";
+import Overlay from "./components/Overlay";
+import SubtitleOverlay from "./components/SubtitleOverlay";
 import VideoActionButton from "../components/ui/VideoActionButton";
 import { VideoPlayerProps } from "./types/VideoPlayerTypes";
 import {
@@ -12,9 +13,13 @@ import {
   useIntroSkip,
   useEpisodes,
   useVideoEvents,
+  useAdManager,
+  usePrimaryVideoLifecycle,
 } from "./hooks";
+import AdOverlay from "./components/AdOverlay";
 import "../index.css";
 import "./styles/subtitles.css";
+import "./styles/ads.css";
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
   trackSrc,
@@ -39,8 +44,35 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   subtitleStyle,
   showControls = true,
   isMute = false,
+  ads,
 }) => {
-  const { setVideoRef, setVideoWrapperRef, videoRef } = useVideoStore();
+  const { setVideoWrapperRef } = useVideoStore(
+    useShallow((state) => ({
+      setVideoWrapperRef: state.setVideoWrapperRef,
+    }))
+  );
+
+  const effectiveAds = React.useMemo(
+    () => (isTrailer ? undefined : ads),
+    [ads, isTrailer]
+  );
+  const hasPreRoll = React.useMemo(
+    () => Boolean(effectiveAds?.preRoll),
+    [effectiveAds?.preRoll]
+  );
+  const {
+    registerVideoRef,
+    videoRef,
+    isAdPlaying,
+    currentAd,
+    adType,
+    initialAdFinished,
+    shouldCoverMainVideo,
+    shouldShowPlaceholder,
+  } = usePrimaryVideoLifecycle({
+    hasPreRoll,
+    trackSrc,
+  });
 
   useVideoSource(trackSrc, type);
   useSubtitles(subtitles);
@@ -58,6 +90,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     onEnded: onEndedHook,
   } = useVideoEvents();
 
+  const { skipAd } = useAdManager(effectiveAds);
+
   return (
     <div
       ref={setVideoWrapperRef}
@@ -73,10 +107,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       )}
 
       <video
-        autoPlay
         playsInline
-        preload="metadata"
-        ref={setVideoRef}
+        preload={hasPreRoll ? "metadata" : "auto"}
+        ref={registerVideoRef}
         onSeeked={onSeeked}
         poster={trackPoster}
         crossOrigin="anonymous"
@@ -96,10 +129,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onError={(e) => {
           onError?.(e);
         }}
+        autoPlay={!hasPreRoll}
         muted={isMute}
-        className={`w-full h-full relative ${className}`}
+        className={`w-full h-full relative ${className || ""} ${
+          shouldCoverMainVideo ? "opacity-0" : "opacity-100"
+        } transition-opacity duration-200 ease-out`}
       />
-      {showControls && (
+      {shouldShowPlaceholder && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
+          <span className="loader" />
+        </div>
+      )}
+      {showControls && initialAdFinished && (
         <Overlay
           config={{
             headerConfig: {
@@ -123,11 +164,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         />
       )}
       <SubtitleOverlay styleConfig={subtitleStyle} />
-      {showSkipIntro && (
+      {showSkipIntro && !isAdPlaying && initialAdFinished && (
         <VideoActionButton
           text="Skip Intro"
           onClick={handleSkipIntro}
           position="left"
+        />
+      )}
+      {/* Ad Overlay */}
+      {isAdPlaying && currentAd && (
+        <AdOverlay
+          adBreak={currentAd}
+          onSkip={skipAd}
+          config={{
+            config: {
+              headerConfig: {
+                config: {
+                  isTrailer: isTrailer,
+                  title: trackTitle,
+                  onClose: onClose,
+                },
+              },
+              bottomConfig: {
+                config: {
+                  seekBarConfig: {
+                    timeCodes: timeCodes,
+                    trackColor: "red",
+                    getPreviewScreenUrl,
+                  },
+                },
+              },
+            },
+          }}
         />
       )}
     </div>

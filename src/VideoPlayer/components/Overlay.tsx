@@ -1,13 +1,18 @@
-import * as React from "react";
-import { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import { useVideoStore } from "../../store/VideoState";
-import VideoPlayerControls from "../MediaControls/VideoPlayerControls";
+import { useShallow } from "zustand/react/shallow";
+import { VideoPlayerControls } from "./controls";
 import { IPlayerConfig } from "../../types";
 import VideoActionButton from "../../components/ui/VideoActionButton";
 import { ArrowRight } from "lucide-react";
+import {
+  CONTROL_INTERACTION_EVENT,
+  CONTROLS_HIDE_DELAY_MS,
+} from "../constants";
 
 const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const {
     setControls,
     controls,
@@ -20,35 +25,47 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     setCountdownTime,
     videoRef,
     currentEpisodeIndex,
-  } = useVideoStore();
+    isAdPlaying,
+  } = useVideoStore(
+    useShallow((state) => ({
+      setControls: state.setControls,
+      controls: state.controls,
+      showCountdown: state.showCountdown,
+      countdownTime: state.countdownTime,
+      setShowCountdown: state.setShowCountdown,
+      setAutoPlayNext: state.setAutoPlayNext,
+      setCurrentEpisodeIndex: state.setCurrentEpisodeIndex,
+      episodeList: state.episodeList,
+      setCountdownTime: state.setCountdownTime,
+      videoRef: state.videoRef,
+      currentEpisodeIndex: state.currentEpisodeIndex,
+      isAdPlaying: state.isAdPlaying,
+    }))
+  );
 
   const { onClose } = config?.headerConfig?.config || {};
 
-  const HIDE_DELAY = 2000;
+  const hideControls = useCallback(() => {
+    setControls(false);
+    containerRef.current?.classList.add("noCursor");
+  }, [setControls]);
 
   const resetControlsTimer = useCallback(() => {
     if (controlsTimerRef.current) {
       clearTimeout(controlsTimerRef.current);
     }
-    controlsTimerRef.current = setTimeout(() => {
-      setControls(false);
-      const videoPlayerControls = document?.getElementById(
-        "videoPlayerControls"
-      );
-      if (videoPlayerControls) {
-        videoPlayerControls.classList.add("noCursor");
-      }
-    }, HIDE_DELAY);
-  }, [setControls]);
+    controlsTimerRef.current = setTimeout(hideControls, CONTROLS_HIDE_DELAY_MS);
+  }, [hideControls]);
 
-  const handleMouseEnter = useCallback(() => {
-    const videoPlayerControls = document?.getElementById("videoPlayerControls");
-    if (videoPlayerControls) {
-      videoPlayerControls.classList.remove("noCursor");
-    }
+  const handleControlsInteraction = useCallback(() => {
+    containerRef.current?.classList.remove("noCursor");
     setControls(true);
     resetControlsTimer();
-  }, [setControls, resetControlsTimer]);
+  }, [resetControlsTimer, setControls]);
+
+  const handleMouseEnter = useCallback(() => {
+    handleControlsInteraction();
+  }, [handleControlsInteraction]);
 
   useEffect(() => {
     return () => {
@@ -70,20 +87,38 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     };
   }, [showCountdown, countdownTime, episodeList.length, setCountdownTime]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const handleExternalInteraction = () => {
+      handleControlsInteraction();
+    };
+
+    window.addEventListener(
+      CONTROL_INTERACTION_EVENT,
+      handleExternalInteraction as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        CONTROL_INTERACTION_EVENT,
+        handleExternalInteraction as EventListener
+      );
+    };
+  }, [handleControlsInteraction]);
+
   const handleNextEpisodeManually = () => {
     const nextIndex = currentEpisodeIndex + 1;
     if (nextIndex < episodeList.length && videoRef && episodeList[nextIndex]) {
       setCurrentEpisodeIndex(nextIndex);
       setAutoPlayNext(true);
       videoRef.src = episodeList[nextIndex].url;
-      videoRef
-        .play()
-        .catch((err: Error) => console.error("Manual play failed:", err));
+      videoRef.play().catch(() => undefined);
       setShowCountdown(false);
       setCountdownTime(10);
 
-      setControls(true);
-      resetControlsTimer();
+      handleControlsInteraction();
     } else if (onClose) {
       onClose();
     }
@@ -92,10 +127,11 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
   return (
     <div
       id="videoPlayerControls"
+      ref={containerRef}
       className="absolute inset-0"
       onMouseMove={handleMouseEnter}
     >
-      {controls && <VideoPlayerControls config={config} />}
+      {controls && !isAdPlaying && <VideoPlayerControls config={config} />}
 
       {showCountdown &&
         episodeList.length > 0 &&

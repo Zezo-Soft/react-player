@@ -1,12 +1,13 @@
 import React from "react";
-interface Props {
+
+interface ThumbProps {
   max: number;
   currentTime: number;
   isThumbActive: boolean;
   trackColor?: string;
 }
 
-export const Thumb: React.FC<Props> = ({
+export const Thumb: React.FC<ThumbProps> = ({
   max,
   currentTime,
   isThumbActive,
@@ -25,7 +26,7 @@ export const Thumb: React.FC<Props> = ({
 
   return (
     <div
-      className={isThumbActive ? "thumb active" : "thumb active"}
+      className="thumb active"
       data-testid="testThumb"
       style={getThumbHandlerPosition()}
     >
@@ -38,3 +39,4 @@ export const Thumb: React.FC<Props> = ({
     </div>
   );
 };
+

@@ -58,14 +58,24 @@ export const millisecondsToSeconds = (milliseconds: number) => {
  * @returns
  */
 export const getExtensionFromUrl = (url: string) => {
-  const extension = url?.split(".")?.pop();
+  if (!url) {
+    return undefined;
+  }
+
+  const sanitized = url.split("#")[0]?.split("?")[0] ?? url;
+  const extension = sanitized?.split(".")?.pop()?.toLowerCase();
+
   if (extension === "m3u8") {
     return "hls";
   }
   if (extension === "mpd") {
     return "dash";
   }
+  if (extension === "mp4") {
+    return "mp4";
+  }
+
   return extension;
 };
 
-export { QualityManager } from './qualityManager';
+export { QualityManager } from "./qualityManager";

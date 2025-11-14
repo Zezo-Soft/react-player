@@ -38,10 +38,6 @@ export const useSubtitles = (subtitles?: SubtitleTrack[]) => {
             );
             if (textTrack) {
               textTrack.mode = "showing";
-              console.log(
-                "Subtitle track loaded for custom rendering:",
-                activeSubtitle.label
-              );
             }
           };
 

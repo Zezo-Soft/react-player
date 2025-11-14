@@ -1,217 +1,598 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Hls from "hls.js";
 import * as dashjs from "dashjs";
+import { useShallow } from "zustand/react/shallow";
 import { useVideoStore } from "../../store/VideoState";
+import { StreamType } from "../../store/types/StoreTypes";
 import { getExtensionFromUrl } from "../utils";
-import { StreamType } from "../utils/qualityManager";
 
-/**
- * Video Source Hook
- * 
- * Manages video source loading and streaming technology detection
- * Supports HLS.js, DASH.js, and native HTML5 video
- * 
- * Features:
- * - Automatic stream type detection
- * - HLS.js fallback for older browsers
- * - DASH.js support with proper initialization
- * - Quality level extraction for all stream types
- * - Error handling and cleanup
- */
+type QualityLevel = {
+  height: number;
+  bitrate?: number;
+  originalIndex: number;
+  id?: string;
+};
+
+type HlsEngineParams = {
+  enabled: boolean;
+  source: string;
+  videoElement: HTMLVideoElement | null;
+  setHlsInstance: (instance: Hls | null) => void;
+  setQualityLevels: (levels: QualityLevel[]) => void;
+  setCurrentQuality: (quality: string) => void;
+};
+
+type DashEngineParams = {
+  enabled: boolean;
+  source: string;
+  videoElement: HTMLVideoElement | null;
+  setDashInstance: (instance: dashjs.MediaPlayerClass | null) => void;
+  setQualityLevels: (levels: QualityLevel[]) => void;
+  setCurrentQuality: (quality: string) => void;
+};
+
+const HLS_CONFIG: any = {
+  enableWorker: true,
+  lowLatencyMode: false,
+  backBufferLength: 90,
+  liveSyncDurationCount: 3,
+  maxBufferSize: 80 * 1_000_000,
+  maxBufferLength: 30,
+  manifestLoadingMaxRetry: 4,
+  manifestLoadingRetryDelay: 1000,
+  levelLoadingMaxRetry: 4,
+  levelLoadingRetryDelay: 1000,
+  fragLoadingMaxRetry: 6,
+  fragLoadingRetryDelay: 750,
+  startLevel: -1,
+  startPosition: -1,
+  capLevelToPlayerSize: true,
+};
+
+const DASH_SETTINGS: any = {
+  streaming: {
+    abr: {
+      autoSwitchBitrate: {
+        video: true,
+        audio: true,
+      },
+      limitBitrateByPortal: true,
+      ABRStrategy: "abrThroughput",
+      bandwidthSafetyFactor: 0.9,
+    },
+    buffer: {
+      fastSwitchEnabled: true,
+      bufferTimeAtTopQuality: 28,
+      bufferTimeAtTopQualityLongForm: 55,
+    },
+    lowLatencyEnabled: false,
+  },
+  debug: {
+    logLevel: dashjs.Debug.LOG_LEVEL_NONE,
+  },
+};
+
+const MAX_HLS_NETWORK_RETRIES = 4;
+const MAX_DASH_RESTARTS = 3;
+
+const sanitizeUrl = (url: string) => {
+  if (!url) return "";
+  return url.split("#")[0]?.split("?")[0] ?? url;
+};
+
+const resolveStreamType = (
+  explicitType: "hls" | "dash" | "mp4" | "other" | "youtube" | undefined,
+  source: string
+): StreamType => {
+  if (
+    explicitType === "hls" ||
+    explicitType === "dash" ||
+    explicitType === "mp4"
+  ) {
+    return explicitType;
+  }
+  if (explicitType === "youtube" || explicitType === "other") {
+    return "other";
+  }
+
+  const sanitized = sanitizeUrl(source).toLowerCase();
+  const extension = getExtensionFromUrl(sanitized);
+
+  if (extension === "hls") return "hls";
+  if (extension === "dash") return "dash";
+  if (extension === "mp4") return "mp4";
+
+  if (sanitized.includes(".m3u8")) return "hls";
+  if (sanitized.includes(".mpd")) return "dash";
+  if (sanitized.includes(".mp4")) return "mp4";
+
+  return "other";
+};
+
+const useHlsEngine = ({
+  enabled,
+  source,
+  videoElement,
+  setHlsInstance,
+  setQualityLevels,
+  setCurrentQuality,
+}: HlsEngineParams) => {
+  const networkRetryRef = useRef(0);
+  const retryTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!enabled || !videoElement) {
+      return;
+    }
+
+    networkRetryRef.current = 0;
+    setQualityLevels([]);
+    setCurrentQuality("auto");
+
+    const clearRetryTimer = () => {
+      if (retryTimerRef.current) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = undefined;
+      }
+    };
+
+    const attachNative = () => {
+      setHlsInstance(null);
+      videoElement.src = source;
+      videoElement.load();
+
+      const handleLoadedMetadata = () => {
+        try {
+          const mediaTracks = (videoElement as any)?.videoTracks;
+          if (mediaTracks && mediaTracks.length > 0) {
+            const levels: QualityLevel[] = Array.from(mediaTracks).map(
+              (track: any, index: number) => ({
+                height: track.height ?? 0,
+                bitrate: track.bandwidth ?? 0,
+                originalIndex: index,
+              })
+            );
+            setQualityLevels(levels);
+          }
+        } catch (_error) {
+          setQualityLevels([]);
+        }
+      };
+
+      videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+      return () => {
+        videoElement.removeEventListener(
+          "loadedmetadata",
+          handleLoadedMetadata
+        );
+      };
+    };
+
+    if (
+      !Hls.isSupported() &&
+      videoElement.canPlayType("application/vnd.apple.mpegurl")
+    ) {
+      return attachNative();
+    }
+
+    if (!Hls.isSupported()) {
+      setHlsInstance(null);
+      videoElement.src = source;
+      videoElement.load();
+      return;
+    }
+
+    const hls = new Hls(HLS_CONFIG);
+    setHlsInstance(hls);
+
+    const updateQualityLevels = () => {
+      const levels = hls.levels ?? [];
+      const parsedLevels: QualityLevel[] = levels.map((level, index) => ({
+        height: level.height ?? 0,
+        bitrate: level.bitrate ?? 0,
+        originalIndex: index,
+      }));
+      setQualityLevels(parsedLevels);
+    };
+
+    const handleManifestParsed = () => {
+      networkRetryRef.current = 0;
+      updateQualityLevels();
+      const { activeQuality } = useVideoStore.getState();
+      if (activeQuality && activeQuality.startsWith("hls-")) {
+        const levelIndex = parseInt(activeQuality.replace("hls-", ""), 10);
+        if (!Number.isNaN(levelIndex) && levelIndex >= 0) {
+          hls.loadLevel = levelIndex;
+          hls.nextLevel = levelIndex;
+          hls.currentLevel = levelIndex;
+          setCurrentQuality(activeQuality);
+          return;
+        }
+      }
+      setCurrentQuality("auto");
+      hls.currentLevel = -1;
+      hls.loadLevel = -1;
+      hls.nextLevel = -1;
+    };
+
+    const handleLevelsUpdated = () => {
+      updateQualityLevels();
+    };
+
+    const handleLevelSwitched = (_event: string, data: { level: number }) => {
+      if (typeof data?.level === "number" && data.level >= 0) {
+        setCurrentQuality(`hls-${data.level}`);
+      }
+    };
+
+    const scheduleRestart = () => {
+      if (networkRetryRef.current >= MAX_HLS_NETWORK_RETRIES) {
+        return;
+      }
+      const delay = Math.min(2000 * (networkRetryRef.current + 1), 10_000);
+      clearRetryTimer();
+      retryTimerRef.current = window.setTimeout(() => {
+        try {
+          hls.startLoad();
+        } catch (_err) {
+          // Ignore
+        }
+      }, delay);
+      networkRetryRef.current += 1;
+    };
+
+    const handleError = (_event: string, data: any) => {
+      if (!data) return;
+      const HLS_ERROR_TYPES = (Hls as any).ErrorTypes ?? {};
+      if (data.fatal) {
+        switch (data.type) {
+          case HLS_ERROR_TYPES.NETWORK_ERROR ?? "networkError":
+            scheduleRestart();
+            break;
+          case HLS_ERROR_TYPES.MEDIA_ERROR ?? "mediaError":
+            try {
+              hls.recoverMediaError();
+            } catch (_err) {
+              scheduleRestart();
+            }
+            break;
+          default:
+            clearRetryTimer();
+            hls.destroy();
+            setHlsInstance(null);
+            break;
+        }
+      } else if (
+        data.type === (HLS_ERROR_TYPES.NETWORK_ERROR ?? "networkError")
+      ) {
+        scheduleRestart();
+      }
+    };
+
+    hls.attachMedia(videoElement);
+    hls.loadSource(source);
+
+    const HLS_EVENTS = (Hls as any).Events ?? {};
+
+    hls.on(
+      HLS_EVENTS.MANIFEST_PARSED ?? "manifestParsed",
+      handleManifestParsed
+    );
+    hls.on(HLS_EVENTS.LEVELS_UPDATED ?? "levelsUpdated", handleLevelsUpdated);
+    hls.on(HLS_EVENTS.LEVEL_SWITCHED ?? "levelSwitched", handleLevelSwitched);
+    hls.on(HLS_EVENTS.ERROR ?? "error", handleError);
+
+    return () => {
+      clearRetryTimer();
+      hls.off(
+        HLS_EVENTS.MANIFEST_PARSED ?? "manifestParsed",
+        handleManifestParsed
+      );
+      hls.off(
+        HLS_EVENTS.LEVELS_UPDATED ?? "levelsUpdated",
+        handleLevelsUpdated
+      );
+      hls.off(
+        HLS_EVENTS.LEVEL_SWITCHED ?? "levelSwitched",
+        handleLevelSwitched
+      );
+      hls.off(HLS_EVENTS.ERROR ?? "error", handleError);
+      hls.destroy();
+      setHlsInstance(null);
+      setQualityLevels([]);
+      setCurrentQuality("auto");
+    };
+  }, [
+    enabled,
+    source,
+    videoElement,
+    setHlsInstance,
+    setQualityLevels,
+    setCurrentQuality,
+  ]);
+};
+
+const useDashEngine = ({
+  enabled,
+  source,
+  videoElement,
+  setDashInstance,
+  setQualityLevels,
+  setCurrentQuality,
+}: DashEngineParams) => {
+  const restartCountRef = useRef(0);
+  const restartTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!enabled || !videoElement) {
+      return;
+    }
+
+    if (!dashjs.supportsMediaSource()) {
+      setDashInstance(null);
+      setQualityLevels([]);
+      videoElement.src = source;
+      videoElement.load();
+      return;
+    }
+
+    restartCountRef.current = 0;
+    setQualityLevels([]);
+    setCurrentQuality("auto");
+
+    const player = dashjs.MediaPlayer().create();
+    setDashInstance(player);
+    const dashPlayer = player as any;
+
+    const clearRestartTimer = () => {
+      if (restartTimerRef.current) {
+        window.clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = undefined;
+      }
+    };
+
+    const applySettings = () => {
+      player.updateSettings(DASH_SETTINGS);
+    };
+
+    const updateQualityLevels = () => {
+      try {
+        const levels = dashPlayer.getBitrateInfoListFor?.("video") ?? [];
+        const mapped: QualityLevel[] = Array.from(levels).map((info: any) => ({
+          height: info.height ?? 0,
+          bitrate: info.bitrate,
+          originalIndex: info.qualityIndex ?? info.index ?? 0,
+          id: info.id,
+        }));
+        setQualityLevels(mapped);
+      } catch (_error) {
+        setQualityLevels([]);
+      }
+    };
+
+    const handleStreamInitialized = () => {
+      restartCountRef.current = 0;
+      updateQualityLevels();
+      const { activeQuality } = useVideoStore.getState();
+      if (activeQuality && activeQuality.startsWith("dash-")) {
+        const levelIndex = parseInt(activeQuality.replace("dash-", ""), 10);
+        if (!Number.isNaN(levelIndex) && levelIndex >= 0) {
+          dashPlayer.setAutoSwitchQualityFor?.("video", false);
+          dashPlayer.setQualityFor?.("video", levelIndex);
+          setCurrentQuality(activeQuality);
+          return;
+        }
+      }
+      dashPlayer.setAutoSwitchQualityFor?.("video", true);
+      const current = dashPlayer.getQualityFor?.("video");
+      if (typeof current === "number" && current >= 0) {
+        setCurrentQuality(`dash-${current}`);
+      } else {
+        setCurrentQuality("auto");
+      }
+    };
+
+    const handleManifestLoaded = () => {
+      updateQualityLevels();
+    };
+
+    const handleQualityRendered = (
+      event: dashjs.QualityChangeRenderedEvent
+    ) => {
+      if (event?.mediaType === "video") {
+        const current = dashPlayer.getQualityFor?.("video");
+        if (typeof current === "number" && current >= 0) {
+          setCurrentQuality(`dash-${current}`);
+        }
+      }
+    };
+
+    const bindEvents = () => {
+      player.on(
+        dashjs.MediaPlayer.events.STREAM_INITIALIZED,
+        handleStreamInitialized
+      );
+      player.on(
+        dashjs.MediaPlayer.events.MANIFEST_LOADED,
+        handleManifestLoaded
+      );
+      player.on(
+        dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+        handleQualityRendered
+      );
+      player.on(dashjs.MediaPlayer.events.ERROR, handleError);
+    };
+
+    const detachEvents = () => {
+      player.off(
+        dashjs.MediaPlayer.events.STREAM_INITIALIZED,
+        handleStreamInitialized
+      );
+      player.off(
+        dashjs.MediaPlayer.events.MANIFEST_LOADED,
+        handleManifestLoaded
+      );
+      player.off(
+        dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+        handleQualityRendered
+      );
+      player.off(dashjs.MediaPlayer.events.ERROR, handleError);
+    };
+
+    const restartPlayer = () => {
+      if (restartCountRef.current >= MAX_DASH_RESTARTS) {
+        return;
+      }
+      restartCountRef.current += 1;
+      clearRestartTimer();
+      const delay = Math.min(1500 * restartCountRef.current, 6000);
+      restartTimerRef.current = window.setTimeout(() => {
+        detachEvents();
+        player.reset();
+        setQualityLevels([]);
+        applySettings();
+        bindEvents();
+        player.initialize(videoElement, source, videoElement.autoplay ?? false);
+      }, delay);
+    };
+
+    const handleError = (event: any) => {
+      if (!event) return;
+      const errorToken =
+        typeof event?.error === "string"
+          ? event.error
+          : typeof event?.event === "object" && event.event
+          ? (event.event as { id?: string }).id
+          : undefined;
+
+      const normalized = errorToken?.toString().toLowerCase();
+      const shouldRecover =
+        normalized &&
+        (normalized.includes("download") ||
+          normalized.includes("manifest") ||
+          normalized.includes("mediasource") ||
+          normalized.includes("capability") ||
+          normalized.includes("fragment"));
+
+      if (shouldRecover) {
+        restartPlayer();
+      }
+    };
+
+    applySettings();
+    bindEvents();
+    player.initialize(videoElement, source, videoElement.autoplay ?? false);
+
+    return () => {
+      clearRestartTimer();
+      detachEvents();
+      player.reset();
+      setDashInstance(null);
+      setQualityLevels([]);
+      setCurrentQuality("auto");
+    };
+  }, [
+    enabled,
+    source,
+    videoElement,
+    setDashInstance,
+    setQualityLevels,
+    setCurrentQuality,
+  ]);
+};
+
 export const useVideoSource = (
   trackSrc: string,
-  type?: "hls" | "mp4" | "dash" | "other" | "youtube" | undefined
+  type?: "hls" | "dash" | "mp4" | "other" | "youtube" | undefined
 ) => {
-  const { videoRef, setQualityLevels, setHlsInstance, setDashInstance, setStreamType } = useVideoStore();
+  const {
+    videoRef,
+    setQualityLevels,
+    setHlsInstance,
+    setDashInstance,
+    setStreamType,
+    setActiveQuality,
+    setCurrentQuality,
+  } = useVideoStore(
+    useShallow((state) => ({
+      videoRef: state.videoRef,
+      setQualityLevels: state.setQualityLevels,
+      setHlsInstance: state.setHlsInstance,
+      setDashInstance: state.setDashInstance,
+      setStreamType: state.setStreamType,
+      setActiveQuality: state.setActiveQuality,
+      setCurrentQuality: state.setCurrentQuality,
+    }))
+  );
+
+  const streamType = useMemo<StreamType>(
+    () => resolveStreamType(type, trackSrc),
+    [type, trackSrc]
+  );
+
+  useEffect(() => {
+    if (!trackSrc) return;
+    setStreamType(streamType);
+    setActiveQuality("auto");
+    setCurrentQuality("auto");
+    setQualityLevels([]);
+  }, [
+    trackSrc,
+    streamType,
+    setStreamType,
+    setActiveQuality,
+    setCurrentQuality,
+    setQualityLevels,
+  ]);
+
+  useEffect(() => {
+    if (streamType !== "dash") {
+      setDashInstance(null);
+    }
+    if (streamType !== "hls") {
+      setHlsInstance(null);
+    }
+  }, [streamType, setDashInstance, setHlsInstance]);
+
+  useEffect(() => {
+    if (!videoRef) return;
+    if (streamType === "mp4" || streamType === "other") {
+      videoRef.src = trackSrc;
+      videoRef.load();
+    } else {
+      // Adaptive engines will attach their own source; ensure no stale src lingers
+      videoRef.removeAttribute("src");
+    }
+  }, [videoRef, trackSrc, streamType]);
+
+  useHlsEngine({
+    enabled: streamType === "hls",
+    source: trackSrc,
+    videoElement: videoRef,
+    setHlsInstance,
+    setQualityLevels,
+    setCurrentQuality,
+  });
+
+  useDashEngine({
+    enabled: streamType === "dash",
+    source: trackSrc,
+    videoElement: videoRef,
+    setDashInstance,
+    setQualityLevels,
+    setCurrentQuality,
+  });
 
   useEffect(() => {
     if (!videoRef) return;
 
-    const getVideoExtension = getExtensionFromUrl(trackSrc);
-    const contentType = type || getVideoExtension;
-
-    // Set stream type in store for quality manager
-    setStreamType(contentType as StreamType);
-
-    // Handle MP4 and other simple formats
-    if (contentType === "mp4" || contentType === "other") {
-      videoRef.src = trackSrc;
-      setQualityLevels([]);
-      return;
-    }
-
-    // Handle HLS streams
-    if (contentType === "hls") {
-      // Native HLS support (Safari/iOS)
-      if (videoRef?.canPlayType("application/vnd.apple.mpegurl")) {
-        console.log('📱 Using native HLS support');
-        videoRef.src = trackSrc;
-        
-        // For native HLS, we can't control quality directly, but we can still extract info
-        const handleLoadedMetadata = () => {
-          const videoElement = videoRef as any;
-          if (videoElement.videoTracks && videoElement.videoTracks.length > 0) {
-            // Extract quality levels from native HLS
-            const tracks = Array.from(videoElement.videoTracks).map((track: any, index: number) => ({
-              height: track.height || 720,
-              bitrate: track.bandwidth || 0,
-              originalIndex: index
-            }));
-            setQualityLevels(tracks);
-            console.log('✅ Native HLS quality levels:', tracks);
-          } else {
-            // Fallback quality levels for native HLS
-            const defaultLevels = [
-              { height: 360, bitrate: 800000, originalIndex: 0 },
-              { height: 480, bitrate: 1400000, originalIndex: 1 },
-              { height: 720, bitrate: 2800000, originalIndex: 2 },
-              { height: 1080, bitrate: 5000000, originalIndex: 3 },
-            ];
-            setQualityLevels(defaultLevels);
-            console.log('✅ Native HLS fallback quality levels:', defaultLevels);
-          }
-          
-          // Even for native HLS, set a mock HLS instance to indicate it's HLS
-          // This allows the quality manager to know we're dealing with HLS
-          setHlsInstance(null as any); // null indicates native HLS, not HLS.js
-        };
-
-        videoRef.addEventListener('loadedmetadata', handleLoadedMetadata);
-        
-        return () => {
-          videoRef.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        };
-      } 
-      // HLS.js support (Chrome/Firefox/etc)
-      else if (Hls.isSupported()) {
-        console.log('🔧 Using HLS.js for HLS streaming');
-        const hls = new Hls({
-          // HLS.js configuration for optimal performance
-          enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 90
-        });
-        
-        hls.loadSource(trackSrc);
-        hls.attachMedia(videoRef as HTMLMediaElement);
-        console.log('✅ HLS.js instance created and attached');
-        setHlsInstance(hls);
-        
-        // Extract quality levels when manifest is parsed
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          const levels = hls.levels.map((level, index) => ({
-            height: level.height,
-            bitrate: level.bitrate,
-            originalIndex: index
-          }));
-          setQualityLevels(levels);
-          console.log('✅ HLS.js quality levels:', levels);
-        });
-        
-        // Log level switches for debugging
-        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-          console.log('🔄 HLS level switched to:', data.level, hls.levels?.[data.level]);
-        });
-        
-        // Error handling
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('❌ HLS.js error:', data);
-        });
-
-        // Cleanup
-        return () => {
-          hls.destroy();
-          console.log('🧹 HLS.js instance destroyed');
-        };
-      } else {
-        // Fallback when HLS.js is not supported
-        console.log('📱 Using fallback HLS (direct src)');
-        videoRef.src = trackSrc;
-        setHlsInstance(null as any); // null indicates native HLS fallback
-        
-        // Set fallback quality levels
-        const defaultLevels = [
-          { height: 360, bitrate: 800000, originalIndex: 0 },
-          { height: 480, bitrate: 1400000, originalIndex: 1 },
-          { height: 720, bitrate: 2800000, originalIndex: 2 },
-          { height: 1080, bitrate: 5000000, originalIndex: 3 },
-        ];
-        setQualityLevels(defaultLevels);
-        console.log('✅ HLS fallback quality levels:', defaultLevels);
-      }
-    } 
-    // Handle DASH streams
-    else if (contentType === "dash") {
-      // DASH.js support
-      if (dashjs.supportsMediaSource()) {
-        console.log('🔧 Using DASH.js for DASH streaming');
-        const player = dashjs.MediaPlayer().create();
-        
-        // DASH.js configuration for optimal performance
-        player.updateSettings({
-          streaming: {
-            buffer: {
-              fastSwitchEnabled: true, // Enable fast quality switching
-              bufferTimeAtTopQuality: 30, // Buffer 30s at top quality
-              bufferTimeAtTopQualityLongForm: 60 // Buffer 60s for long content
-            },
-            // Note: Some ABR settings may vary by DASH.js version
-            // Check documentation for your specific version
-          }
-        });
-        
-        player.initialize(videoRef as HTMLMediaElement, trackSrc, true);
-        console.log('✅ DASH.js instance created and initialized');
-        setDashInstance(player);
-        
-        // Extract quality levels when manifest is loaded
-        const handleManifestLoaded = () => {
-          try {
-            const representations = (player as any).getRepresentationsByType('video');
-            if (representations && representations.length > 0) {
-              const levels = representations.map((rep: any, index: number) => ({
-                height: rep.height || Math.round(rep.bandwidth / 1000) || 0,
-                bitrate: rep.bandwidth,
-                originalIndex: index,
-                id: rep.id
-              }));
-              setQualityLevels(levels);
-              console.log('✅ DASH.js quality levels:', levels);
-            } else {
-              console.warn('⚠️ No DASH video representations found');
-              setQualityLevels([]);
-            }
-          } catch (error) {
-            console.error('❌ Error getting DASH quality levels:', error);
-            setQualityLevels([]);
-          }
-        };
-        
-        // Listen for manifest loaded event
-        player.on('manifestLoaded' as any, handleManifestLoaded);
-        
-        // Log quality changes for debugging
-        player.on('qualityChange' as any, (e: any) => {
-          console.log('🔄 DASH quality changed to:', e.newQuality, e);
-        });
-        
-        // Error handling
-        player.on('error' as any, (e: any) => {
-          console.error('❌ DASH.js error:', e);
-        });
-        
-        // Cleanup
-        return () => {
-          player.reset();
-          console.log('🧹 DASH.js instance reset');
-        };
-      } else {
-        console.warn('⚠️ DASH.js not supported in this browser');
-      }
-    }
-    
-    // Fallback for unsupported formats
-    videoRef.src = trackSrc;
-    setQualityLevels([]);
-  }, [trackSrc, videoRef, type, setQualityLevels, setHlsInstance, setDashInstance, setStreamType]);
+    return () => {
+      videoRef.pause();
+      videoRef.removeAttribute("src");
+      videoRef.load();
+      const { setIsPlaying, setBufferedProgress } = useVideoStore.getState();
+      setIsPlaying(false);
+      setBufferedProgress(0);
+    };
+  }, [videoRef, trackSrc]);
 };

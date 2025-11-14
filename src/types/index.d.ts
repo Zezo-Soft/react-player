@@ -1,5 +1,5 @@
 import { SubtitleTrack } from "../store";
-import { TimeCode } from "../VideoPlayer/_components/TimeLine/TimeLine";
+import { TimeCode } from "../VideoPlayer/components/time-line/TimeLine";
 
 export interface IControlsHeaderProps {
   config?: {

@@ -8,6 +8,31 @@ export const createResetSlice: StateCreator<
   StoreResetState
 > = (set, get) => ({
   resetStore: () => {
+    const safeStopMediaElement = (media: HTMLVideoElement | null) => {
+      if (!media) return;
+      try {
+        media.pause();
+      } catch (_error) {}
+      try {
+        media.currentTime = 0;
+      } catch (_error) {}
+      media.removeAttribute("src");
+      media.load();
+    };
+
+    const { videoRef, adVideoRef, hlsInstance, dashInstance } = get();
+
+    safeStopMediaElement(videoRef);
+    safeStopMediaElement(adVideoRef);
+
+    if (hlsInstance && typeof hlsInstance.destroy === "function") {
+      hlsInstance.destroy();
+    }
+
+    if (dashInstance && typeof dashInstance.reset === "function") {
+      dashInstance.reset();
+    }
+
     set({
       videoRef: null,
       videoWrapperRef: null,
@@ -22,6 +47,7 @@ export const createResetSlice: StateCreator<
       controls: false,
       isFullscreen: false,
       hlsInstance: undefined,
+      dashInstance: undefined,
       qualityLevels: undefined,
       activeQuality: "auto",
       activeSubtitle: null,
@@ -32,6 +58,15 @@ export const createResetSlice: StateCreator<
       countdownTime: 10,
       autoPlayNext: false,
       showIntroSkip: false,
+      isAdPlaying: false,
+      currentAd: null,
+      adType: null,
+      adCurrentTime: 0,
+      canSkipAd: false,
+      skipCountdown: 0,
+      playedAdBreaks: [],
+      midRollQueue: [],
+      adVideoRef: null,
     });
   },
 });
