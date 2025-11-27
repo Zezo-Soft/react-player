@@ -1,42 +1,42 @@
 import { useEffect, useRef } from "react";
 import { useVideoStore } from "../../store/VideoState";
-import { VideoPlayerProps } from "../types/VideoPlayerTypes";
+import { FeatureProps } from "../types/VideoPlayerTypes";
 
 export const useVideoTracking = (
-  tracking?: VideoPlayerProps["tracking"],
-  episodeList?: VideoPlayerProps["episodeList"],
+  tracking?: FeatureProps["tracking"],
+  episodeList?: FeatureProps["episodeList"],
   currentEpisodeIndex?: number,
   onClose?: () => void
 ) => {
-  const { videoRef, setIsPlaying, setShowCountdown } = useVideoStore();
-  const startTime = useRef<number | null>(null);
+  const { videoRef, setShowCountdown } = useVideoStore();
   const isViewCounted = useRef(false);
+  const lastVideoSrcRef = useRef<string | null>(null);
+
+  // Reset view count when video source changes
+  useEffect(() => {
+    if (!videoRef) return;
+
+    const currentSrc = videoRef.src || videoRef.currentSrc;
+
+    // If video source changed, reset the view count
+    if (lastVideoSrcRef.current !== currentSrc) {
+      isViewCounted.current = false;
+      lastVideoSrcRef.current = currentSrc;
+    }
+  }, [videoRef?.src, videoRef?.currentSrc, videoRef]);
 
   useEffect(() => {
     if (!videoRef) return;
 
+    // Only handle view tracking on play - setIsPlaying is handled by useVideoEvents
     const onPlay = () => {
       if (!isViewCounted.current) {
         isViewCounted.current = true;
         tracking?.onViewed?.();
       }
-      startTime.current = Date.now();
-      setIsPlaying(true);
     };
 
-    const onPause = () => {
-      if (startTime.current) {
-        const elapsedTime = (Date.now() - startTime.current) / 1000;
-        const getCurrentTime = localStorage.getItem("current_time");
-        localStorage.setItem(
-          "current_time",
-          (Number(getCurrentTime || 0) + elapsedTime).toString()
-        );
-        startTime.current = null;
-      }
-      setIsPlaying(false);
-    };
-
+    // Handle episode end logic - playback state is handled by useVideoEvents
     const onEnded = () => {
       if (
         episodeList &&
@@ -55,12 +55,10 @@ export const useVideoTracking = (
     };
 
     videoRef.addEventListener("play", onPlay);
-    videoRef.addEventListener("pause", onPause);
     videoRef.addEventListener("ended", onEnded);
 
     return () => {
       videoRef.removeEventListener("play", onPlay);
-      videoRef.removeEventListener("pause", onPause);
       videoRef.removeEventListener("ended", onEnded);
     };
   }, [
@@ -69,36 +67,6 @@ export const useVideoTracking = (
     currentEpisodeIndex,
     onClose,
     tracking,
-    setIsPlaying,
     setShowCountdown,
   ]);
-
-  useEffect(() => {
-    const handleUnload = () => {
-      if (startTime.current) {
-        const elapsedTime = (Date.now() - startTime.current) / 1000;
-        const getCurrentTime = localStorage.getItem("current_time");
-        localStorage.setItem(
-          "current_time",
-          (Number(getCurrentTime || 0) + elapsedTime).toString()
-        );
-      }
-
-      const totalTimeWatched = Number(
-        localStorage.getItem("current_time") || 0
-      );
-      if (totalTimeWatched >= 30) {
-        tracking?.onWatchTimeUpdated?.({
-          watchTime: totalTimeWatched,
-        });
-      }
-      localStorage.setItem("current_time", "0");
-    };
-
-    window.addEventListener("unload", handleUnload);
-
-    return () => {
-      window.removeEventListener("unload", handleUnload);
-    };
-  }, [tracking]);
 };

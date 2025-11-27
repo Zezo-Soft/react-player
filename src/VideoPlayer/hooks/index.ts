@@ -7,3 +7,4 @@ export { useEpisodes } from "./useEpisodes";
 export { useVideoEvents } from "./useVideoEvents";
 export { useAdManager } from "./useAdManager";
 export { usePrimaryVideoLifecycle } from "./usePrimaryVideoLifecycle";
+export { useVideoError } from "./useVideoError";

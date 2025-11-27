@@ -7,4 +7,5 @@ export { createSubtitlesSlice } from "./subtitlesSlice";
 export { createEpisodesSlice } from "./episodesSlice";
 export { createIntroSlice } from "./introSlice";
 export { createAdsSlice } from "./adsSlice";
+export { createErrorSlice } from "./errorSlice";
 export { createResetSlice } from "./resetSlice";

@@ -10,6 +10,7 @@ import {
   createEpisodesSlice,
   createIntroSlice,
   createAdsSlice,
+  createErrorSlice,
   createResetSlice,
 } from "./slices";
 
@@ -23,5 +24,6 @@ export const useVideoStore = create<VideoState>()((set, get, store) => ({
   ...createEpisodesSlice(set, get, store),
   ...createIntroSlice(set, get, store),
   ...createAdsSlice(set, get, store),
+  ...createErrorSlice(set, get, store),
   ...createResetSlice(set, get, store),
 }));

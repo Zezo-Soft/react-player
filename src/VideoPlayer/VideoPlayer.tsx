@@ -15,37 +15,42 @@ import {
   useVideoEvents,
   useAdManager,
   usePrimaryVideoLifecycle,
+  useVideoError,
 } from "./hooks";
 import AdOverlay from "./components/AdOverlay";
+import ErrorOverlay from "./components/ErrorOverlay";
 import "../index.css";
 import "./styles/subtitles.css";
 import "./styles/ads.css";
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  trackSrc,
-  trackTitle,
-  intro,
-  onClose,
-  onError,
-  trackPoster,
-  isTrailer,
-  className,
-  type,
-  height,
-  width,
-  timeCodes,
-  getPreviewScreenUrl,
-  tracking,
-  subtitles,
-  episodeList,
-  currentEpisodeIndex = 0,
-  onEnded,
-  nextEpisodeConfig,
-  subtitleStyle,
-  showControls = true,
-  isMute = false,
-  ads,
-}) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, features }) => {
+  const {
+    src: trackSrc,
+    title: trackTitle,
+    poster: trackPoster,
+    type,
+    isTrailer,
+    showControls = true,
+    isMute = false,
+    startFrom,
+  } = video;
+
+  const { className, width, height, subtitleStyle } = style || {};
+
+  const { onEnded, onError, onClose } = events || {};
+
+  const {
+    timeCodes,
+    getPreviewScreenUrl,
+    tracking,
+    subtitles,
+    episodeList,
+    currentEpisodeIndex = 0,
+    intro,
+    nextEpisodeConfig,
+    ads,
+  } = features || {};
+
   const { setVideoWrapperRef } = useVideoStore(
     useShallow((state) => ({
       setVideoWrapperRef: state.setVideoWrapperRef,
@@ -65,7 +70,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     videoRef,
     isAdPlaying,
     currentAd,
-    adType,
     initialAdFinished,
     shouldCoverMainVideo,
     shouldShowPlaceholder,
@@ -91,6 +95,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   } = useVideoEvents();
 
   const { skipAd } = useAdManager(effectiveAds);
+  const { error, handleVideoError, retry } = useVideoError();
+
+  const hasResumedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!videoRef || !startFrom || hasResumedRef.current) return;
+
+    const handleCanPlay = () => {
+      if (!hasResumedRef.current && startFrom > 0) {
+        videoRef.currentTime = startFrom;
+        hasResumedRef.current = true;
+      }
+    };
+
+    videoRef.addEventListener("canplay", handleCanPlay);
+    return () => videoRef.removeEventListener("canplay", handleCanPlay);
+  }, [videoRef, startFrom]);
 
   return (
     <div
@@ -127,6 +148,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           onEnded?.(e);
         }}
         onError={(e) => {
+          handleVideoError(e);
           onError?.(e);
         }}
         autoPlay={!hasPreRoll}
@@ -147,7 +169,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               config: {
                 isTrailer: isTrailer,
                 title: trackTitle,
-                onClose: onClose,
+                onClose,
                 videoRef: videoRef as any,
               },
             },
@@ -182,7 +204,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 config: {
                   isTrailer: isTrailer,
                   title: trackTitle,
-                  onClose: onClose,
+                  onClose,
                 },
               },
               bottomConfig: {
@@ -198,6 +220,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }}
         />
       )}
+      {/* Error Overlay */}
+      {error && <ErrorOverlay error={error} onRetry={retry} />}
     </div>
   );
 };

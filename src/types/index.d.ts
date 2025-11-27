@@ -34,5 +34,7 @@ export interface IPlayerConfig {
 }
 
 export interface IOnWatchTimeUpdated {
-  watchTime: number;
+  watchTime?: number;
+  currentTime: number;
+  duration: number;
 }
