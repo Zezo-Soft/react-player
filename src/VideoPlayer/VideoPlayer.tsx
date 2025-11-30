@@ -4,7 +4,7 @@ import { useVideoStore } from "../store/VideoState";
 import Overlay from "./components/Overlay";
 import SubtitleOverlay from "./components/SubtitleOverlay";
 import VideoActionButton from "../components/ui/VideoActionButton";
-import { VideoPlayerProps } from "./types/VideoPlayerTypes";
+import { VideoPlayerProps, WatchHistoryData } from "./types/VideoPlayerTypes";
 import {
   useVideoSource,
   useSubtitles,
@@ -23,7 +23,7 @@ import "../index.css";
 import "./styles/subtitles.css";
 import "./styles/ads.css";
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, features }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(({ video, style, events, features }) => {
   const {
     src: trackSrc,
     title: trackTitle,
@@ -37,7 +37,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, feature
 
   const { className, width, height, subtitleStyle } = style || {};
 
-  const { onEnded, onError, onClose } = events || {};
+  const { onEnded, onError, onClose, onWatchHistoryUpdate } = events || {};
 
   const {
     timeCodes,
@@ -78,10 +78,94 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, feature
     trackSrc,
   });
 
+  const onWatchHistoryUpdateRef = React.useRef(onWatchHistoryUpdate);
+
+  // Keep ref updated with latest callback
+  React.useEffect(() => {
+    onWatchHistoryUpdateRef.current = onWatchHistoryUpdate;
+  }, [onWatchHistoryUpdate]);
+
+  // Function to gather watch history data
+  const getWatchHistoryData = React.useCallback((): WatchHistoryData | null => {
+    const video = useVideoStore.getState().videoRef;
+    if (!video || !video.duration || isNaN(video.duration)) return null;
+
+    const currentTime = video.currentTime || 0;
+    const duration = video.duration;
+    const progress = Math.round((currentTime / duration) * 100);
+    const isCompleted = progress >= 90; // 90% or more = completed
+
+    return {
+      currentTime,
+      duration,
+      progress,
+      isCompleted,
+      watchedAt: Date.now(),
+    };
+  }, []);
+
+  // Enhanced onClose handler that also saves history
+  const handleClose = React.useCallback(() => {
+    const historyData = getWatchHistoryData();
+    if (historyData && onWatchHistoryUpdate) {
+      onWatchHistoryUpdate(historyData);
+    }
+    onClose?.();
+  }, [getWatchHistoryData, onWatchHistoryUpdate, onClose]);
+
+  // Memoize overlay config to prevent unnecessary re-renders
+  const overlayConfig = React.useMemo(
+    () => ({
+      headerConfig: {
+        config: {
+          isTrailer: isTrailer,
+          title: trackTitle,
+          onClose: handleClose,
+          videoRef: videoRef as any,
+        },
+      },
+      bottomConfig: {
+        config: {
+          seekBarConfig: {
+            timeCodes: timeCodes,
+            trackColor: "red",
+            getPreviewScreenUrl,
+          },
+        },
+      },
+    }),
+    [isTrailer, trackTitle, handleClose, videoRef, timeCodes, getPreviewScreenUrl]
+  );
+
+  // Memoize ad overlay config
+  const adOverlayConfig = React.useMemo(
+    () => ({
+      config: {
+        headerConfig: {
+          config: {
+            isTrailer: isTrailer,
+            title: trackTitle,
+            onClose: handleClose,
+          },
+        },
+        bottomConfig: {
+          config: {
+            seekBarConfig: {
+              timeCodes: timeCodes,
+              trackColor: "red",
+              getPreviewScreenUrl,
+            },
+          },
+        },
+      },
+    }),
+    [isTrailer, trackTitle, handleClose, timeCodes, getPreviewScreenUrl]
+  );
+
   useVideoSource(trackSrc, type);
   useSubtitles(subtitles);
   useSubtitleStyling(subtitleStyle);
-  useVideoTracking(tracking, episodeList, currentEpisodeIndex, onClose);
+  useVideoTracking(tracking, episodeList, currentEpisodeIndex, handleClose);
   const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
   useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
   const {
@@ -98,6 +182,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, feature
   const { error, handleVideoError, retry } = useVideoError();
 
   const hasResumedRef = React.useRef(false);
+
+  // Call onWatchHistoryUpdate when component unmounts
+  React.useEffect(() => {
+    return () => {
+      const historyData = getWatchHistoryData();
+      if (historyData && onWatchHistoryUpdateRef.current) {
+        onWatchHistoryUpdateRef.current(historyData);
+      }
+    };
+  }, [getWatchHistoryData]);
 
   React.useEffect(() => {
     if (!videoRef || !startFrom || hasResumedRef.current) return;
@@ -163,27 +257,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, feature
         </div>
       )}
       {showControls && initialAdFinished && (
-        <Overlay
-          config={{
-            headerConfig: {
-              config: {
-                isTrailer: isTrailer,
-                title: trackTitle,
-                onClose,
-                videoRef: videoRef as any,
-              },
-            },
-            bottomConfig: {
-              config: {
-                seekBarConfig: {
-                  timeCodes: timeCodes,
-                  trackColor: "red",
-                  getPreviewScreenUrl,
-                },
-              },
-            },
-          }}
-        />
+        <Overlay config={overlayConfig} />
       )}
       <SubtitleOverlay styleConfig={subtitleStyle} />
       {showSkipIntro && !isAdPlaying && initialAdFinished && (
@@ -198,32 +272,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, style, events, feature
         <AdOverlay
           adBreak={currentAd}
           onSkip={skipAd}
-          config={{
-            config: {
-              headerConfig: {
-                config: {
-                  isTrailer: isTrailer,
-                  title: trackTitle,
-                  onClose,
-                },
-              },
-              bottomConfig: {
-                config: {
-                  seekBarConfig: {
-                    timeCodes: timeCodes,
-                    trackColor: "red",
-                    getPreviewScreenUrl,
-                  },
-                },
-              },
-            },
-          }}
+          config={adOverlayConfig}
         />
       )}
-      {/* Error Overlay */}
-      {error && <ErrorOverlay error={error} onRetry={retry} />}
+      {/* Error Overlay - only show when consumer has provided onError */}
+      {error && onError && <ErrorOverlay error={error} onRetry={retry} />}
     </div>
   );
-};
+});
+
+VideoPlayer.displayName = "VideoPlayer";
 
 export default VideoPlayer;

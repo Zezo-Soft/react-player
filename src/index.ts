@@ -7,6 +7,7 @@ export type {
   SubtitleTrack,
   IntroConfig,
   NextEpisodeConfig,
+  WatchHistoryData,
 } from "./VideoPlayer/types/VideoPlayerTypes";
 export type { SubtitleStyleConfig } from "./VideoPlayer/hooks/useSubtitleStyling";
 export type {

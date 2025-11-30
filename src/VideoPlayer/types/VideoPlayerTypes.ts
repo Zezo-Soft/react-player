@@ -3,6 +3,14 @@ import { IOnWatchTimeUpdated } from "../../types";
 import { SubtitleStyleConfig } from "../hooks/useSubtitleStyling";
 import { AdConfig } from "./AdTypes";
 
+export interface WatchHistoryData {
+  currentTime: number;
+  duration: number;
+  progress: number;
+  isCompleted: boolean;
+  watchedAt: number;
+}
+
 
 export interface VideoProps {
   src: string;
@@ -26,6 +34,8 @@ export interface EventProps {
   onEnded?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   onError?: (e?: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   onClose?: () => void;
+  /** Called when player closes with watch progress data for history tracking */
+  onWatchHistoryUpdate?: (data: WatchHistoryData) => void;
 }
 
 export interface FeatureProps {

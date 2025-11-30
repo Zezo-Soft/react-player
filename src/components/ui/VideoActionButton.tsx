@@ -8,7 +8,7 @@ interface VideoActionButtonProps {
   position?: "left" | "right";
 }
 
-const VideoActionButton: React.FC<VideoActionButtonProps> = ({
+const VideoActionButton: React.FC<VideoActionButtonProps> = React.memo(({
   text,
   onClick,
   icon,
@@ -49,6 +49,8 @@ const VideoActionButton: React.FC<VideoActionButtonProps> = ({
       </button>
     </div>
   );
-};
+});
+
+VideoActionButton.displayName = "VideoActionButton";
 
 export default VideoActionButton;

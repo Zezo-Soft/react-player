@@ -10,7 +10,7 @@ import {
   CONTROLS_HIDE_DELAY_MS,
 } from "../constants";
 
-const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
+const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -108,7 +108,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     };
   }, [handleControlsInteraction]);
 
-  const handleNextEpisodeManually = () => {
+  const handleNextEpisodeManually = useCallback(() => {
     const nextIndex = currentEpisodeIndex + 1;
     if (nextIndex < episodeList.length && videoRef && episodeList[nextIndex]) {
       setCurrentEpisodeIndex(nextIndex);
@@ -122,7 +122,17 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     } else if (onClose) {
       onClose();
     }
-  };
+  }, [
+    currentEpisodeIndex,
+    episodeList,
+    videoRef,
+    setCurrentEpisodeIndex,
+    setAutoPlayNext,
+    setShowCountdown,
+    setCountdownTime,
+    handleControlsInteraction,
+    onClose,
+  ]);
 
   return (
     <div
@@ -146,6 +156,8 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
         )}
     </div>
   );
-};
+});
+
+Overlay.displayName = "Overlay";
 
 export default Overlay;

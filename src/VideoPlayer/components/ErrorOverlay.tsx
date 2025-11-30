@@ -6,7 +6,7 @@ interface ErrorOverlayProps {
   onRetry: () => void;
 }
 
-const ErrorOverlay: React.FC<ErrorOverlayProps> = ({ error, onRetry }) => {
+const ErrorOverlay: React.FC<ErrorOverlayProps> = React.memo(({ error, onRetry }) => {
   const getIcon = () => {
     switch (error.type) {
       case "network":
@@ -100,7 +100,9 @@ const ErrorOverlay: React.FC<ErrorOverlayProps> = ({ error, onRetry }) => {
       </div>
     </div>
   );
-};
+});
+
+ErrorOverlay.displayName = "ErrorOverlay";
 
 export default ErrorOverlay;
 

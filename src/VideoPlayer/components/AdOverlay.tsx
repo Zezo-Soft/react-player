@@ -1,11 +1,6 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVideoStore } from "../../store/VideoState";
+import { useShallow } from "zustand/react/shallow";
 import { AdBreak } from "../types/AdTypes";
 import { SkipForward } from "lucide-react";
 import { ControlsHeader, MiddleControls } from "./controls";
@@ -17,7 +12,7 @@ interface AdOverlayProps {
   config?: IPlayerConfig;
 }
 
-const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
+const AdOverlay: React.FC<AdOverlayProps> = React.memo(({ adBreak, onSkip, config }) => {
   const {
     adVideoRef,
     setAdVideoRef,
@@ -30,13 +25,31 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     videoRef,
     muted,
     setIsPlaying,
-  } = useVideoStore();
+  } = useVideoStore(
+    useShallow((state) => ({
+      adVideoRef: state.adVideoRef,
+      setAdVideoRef: state.setAdVideoRef,
+      adCurrentTime: state.adCurrentTime,
+      setAdCurrentTime: state.setAdCurrentTime,
+      canSkipAd: state.canSkipAd,
+      setCanSkipAd: state.setCanSkipAd,
+      skipCountdown: state.skipCountdown,
+      setSkipCountdown: state.setSkipCountdown,
+      videoRef: state.videoRef,
+      muted: state.muted,
+      setIsPlaying: state.setIsPlaying,
+    }))
+  );
 
   const [showControls, setShowControls] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
+
   const [adDuration, setAdDuration] = useState(0);
   const [requiresInteraction, setRequiresInteraction] = useState(false);
+  const [adLoadError, setAdLoadError] = useState(false);
+
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const safelySetCanSkipAd = useCallback(
     (value: boolean) => {
@@ -93,7 +106,21 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
   useEffect(() => {
     setAdDuration(0);
     setRequiresInteraction(false);
-  }, [adBreak.id]);
+    setAdLoadError(false);
+    setAdCurrentTime(0);
+    
+    // Clear any existing load timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+    
+    // Reset skip state when ad changes
+    if (adBreak.skipable !== undefined) {
+      setCanSkipAd(false);
+      setSkipCountdown(0);
+    }
+  }, [adBreak.id, adBreak.skipable, setAdCurrentTime, setCanSkipAd, setSkipCountdown]);
 
   useEffect(() => {
     if (!adBreak.skipable) {
@@ -119,15 +146,28 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
 
   const attemptAdPlayback = useCallback(() => {
     if (!adVideoRef) return;
+    
+    // Clear error states
     setRequiresInteraction(false);
+    setAdLoadError(false);
+    
+    // Ensure video is loaded
+    if (!adVideoRef.src && adBreak.adUrl) {
+      adVideoRef.src = adBreak.adUrl;
+      adVideoRef.load();
+      return;
+    }
+    
+    // Try to play
     const playPromise = adVideoRef.play();
     if (playPromise && "catch" in playPromise) {
-      playPromise.catch(() => {
+      playPromise.catch((error) => {
+        console.warn('Ad play failed:', error);
         setRequiresInteraction(true);
         setIsPlaying(false);
       });
     }
-  }, [adVideoRef, setIsPlaying]);
+  }, [adVideoRef, adBreak.adUrl, setIsPlaying]);
 
   useEffect(() => {
     if (!adVideoRef) return;
@@ -152,13 +192,32 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     };
 
     const handleLoadedMetadata = () => {
+      // Clear load timeout on successful load
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+      
       const duration = Number.isFinite(adVideoRef.duration)
         ? adVideoRef.duration
         : 0;
       setAdDuration(duration);
+      setAdLoadError(false);
       setIsPlaying(!adVideoRef.paused);
       attemptAdPlayback();
     };
+    
+    // Set load timeout (30 seconds)
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+    loadTimeoutRef.current = setTimeout(() => {
+      if (adVideoRef && adVideoRef.readyState < 2) {
+        console.warn('Ad load timeout:', adBreak.id);
+        setAdLoadError(true);
+        setRequiresInteraction(true);
+      }
+    }, 30000);
 
     const handlePlay = () => {
       setIsPlaying(true);
@@ -178,7 +237,25 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
       setRequiresInteraction(false);
     };
 
-    const handleError = () => {
+    const handleError = (e: Event) => {
+      // Clear load timeout on error
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+      
+      const error = e.target as HTMLVideoElement;
+      const errorCode = error.error?.code;
+      const errorMessage = error.error?.message || 'Unknown ad error';
+      
+      console.error('Ad playback error:', {
+        adId: adBreak.id,
+        errorCode,
+        errorMessage,
+        src: adVideoRef.src,
+      });
+      
+      setAdLoadError(true);
       setRequiresInteraction(true);
       setIsPlaying(false);
     };
@@ -199,6 +276,12 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
       adVideoRef.removeEventListener("waiting", handleWaiting);
       adVideoRef.removeEventListener("playing", handlePlaying);
       adVideoRef.removeEventListener("error", handleError);
+      
+      // Clear load timeout
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
     };
   }, [
     adVideoRef,
@@ -215,33 +298,64 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
   useEffect(() => {
     if (!adVideoRef || !videoRef) return;
 
-    if (adVideoRef.readyState === 0) {
-      adVideoRef.volume = videoRef.volume;
-      adVideoRef.muted = muted;
+    // Sync volume and muted state
+    adVideoRef.volume = videoRef.volume;
+    adVideoRef.muted = muted;
+
+    // Check if src needs to be updated
+    const currentSrc = adVideoRef.src || adVideoRef.currentSrc || '';
+    const needsReload = !currentSrc || currentSrc !== adBreak.adUrl;
+
+    // Load ad if needed
+    if (needsReload && adBreak.adUrl) {
+      // Clear previous src
+      adVideoRef.pause();
+      adVideoRef.removeAttribute('src');
+      adVideoRef.src = '';
+      
+      // Set new src
+      adVideoRef.src = adBreak.adUrl;
       adVideoRef.load();
     }
 
     const handleCanPlay = () => {
-      if (adVideoRef && !adVideoRef.paused) return;
+      if (!adVideoRef || adVideoRef.paused === false) return;
       attemptAdPlayback();
     };
 
-    adVideoRef.addEventListener("canplay", handleCanPlay);
+    const handleLoadedData = () => {
+      // Ensure volume is synced after load
+      if (videoRef) {
+        adVideoRef.volume = videoRef.volume;
+      }
+      adVideoRef.muted = muted;
+    };
 
-    if (adVideoRef.readyState >= 3) {
+    adVideoRef.addEventListener("canplay", handleCanPlay);
+    adVideoRef.addEventListener("loadeddata", handleLoadedData);
+
+    // Try to play if already ready and src matches
+    if (adVideoRef.readyState >= 3 && !needsReload) {
       attemptAdPlayback();
     }
 
     return () => {
       adVideoRef.removeEventListener("canplay", handleCanPlay);
+      adVideoRef.removeEventListener("loadeddata", handleLoadedData);
     };
-  }, [adVideoRef, videoRef, attemptAdPlayback]);
+  }, [adVideoRef, videoRef, muted, adBreak.adUrl, attemptAdPlayback]);
 
   useEffect(() => {
-    if (adVideoRef) {
-      adVideoRef.muted = muted;
+    if (!adVideoRef) return;
+    
+    // Sync muted state
+    adVideoRef.muted = muted;
+    
+    // Sync volume with main video
+    if (videoRef) {
+      adVideoRef.volume = videoRef.volume;
     }
-  }, [adVideoRef, muted]);
+  }, [adVideoRef, muted, videoRef]);
 
   const handleSkip = () => {
     if (canSkipAd && onSkip) {
@@ -249,15 +363,7 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
     }
   };
 
-  const formatTime = (seconds: number): string => {
-    if (isNaN(seconds) || seconds < 0) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const progressPercent =
-    adDuration > 0 ? (adCurrentTime / adDuration) * 100 : 0;
+  const progressPercent = adDuration > 0 ? (adCurrentTime / adDuration) * 100 : 0;
 
   return (
     <div
@@ -273,12 +379,28 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
       <div className="relative flex-1 w-full flex items-center justify-center">
         <video
           ref={(ref) => {
-            if (ref && ref !== adVideoRef) {
-              ref.muted = muted;
+            if (!ref) return;
+            
+            // Update ref if changed
+            if (ref !== adVideoRef) {
               setAdVideoRef(ref);
-              if (ref.src !== adBreak.adUrl) {
+            }
+            
+            // Set muted state
+            ref.muted = muted;
+            
+            // Sync volume with main video
+            if (videoRef) {
+              ref.volume = videoRef.volume;
+            }
+            
+            // Set src only if different and URL is provided
+            if (adBreak.adUrl) {
+              const currentSrc = ref.src || ref.currentSrc || '';
+              if (currentSrc !== adBreak.adUrl) {
+                // Only reload if src actually changed
                 ref.src = adBreak.adUrl;
-                ref.load();
+                // Don't call load() here - let the useEffect handle it
               }
             }
           }}
@@ -289,14 +411,19 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
           preload="auto"
           key={adBreak.id}
         />
-        {requiresInteraction && (
+        {(requiresInteraction || adLoadError) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <button
-              onClick={attemptAdPlayback}
-              className="px-5 py-3 rounded bg-white/20 text-white font-semibold border border-white/40 hover:bg-white/30 transition"
-            >
-              Tap to Play Ad
-            </button>
+            <div className="flex flex-col items-center gap-4">
+              {adLoadError && (
+                <p className="text-red-400 text-sm">Ad failed to load</p>
+              )}
+              <button
+                onClick={attemptAdPlayback}
+                className="px-5 py-3 rounded bg-white/20 text-white font-semibold border border-white/40 hover:bg-white/30 transition"
+              >
+                {adLoadError ? 'Retry Ad' : 'Tap to Play Ad'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -359,19 +486,8 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
               </div>
             </div>
 
-            <div className="px-10 pb-6 flex items-center justify-between">
-              <div className="flex items-center gap-4 text-white">
-                <span className="text-lg lg:text-2xl font-semibold">
-                  {formatTime(adCurrentTime)}
-                </span>
-                <span className="text-lg lg:text-3xl font-semibold text-gray-500">
-                  /
-                </span>
-                <span className="text-lg lg:text-2xl font-semibold text-gray-400">
-                  {formatTime(adDuration)}
-                </span>
-              </div>
-              {sponsoredUrl && (
+            {sponsoredUrl && (
+              <div className="px-10 pb-6 flex items-center justify-end">
                 <a
                   href={sponsoredUrl}
                   target="_blank"
@@ -380,13 +496,15 @@ const AdOverlay: React.FC<AdOverlayProps> = ({ adBreak, onSkip, config }) => {
                 >
                   Learn More
                 </a>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
+
+AdOverlay.displayName = "AdOverlay";
 
 export default AdOverlay;

@@ -154,6 +154,9 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
   const playMidRollAd = async (adBreak: AdBreak) => {
     if (!videoRef || isAdPlaying) return;
+    
+    // Prevent duplicate ad playback
+    if (playedAdBreaks.includes(adBreak.id)) return;
 
     const updatedQueue = midRollQueue.filter((ad) => ad.id !== adBreak.id);
     setMidRollQueue(updatedQueue);
@@ -197,13 +200,15 @@ export const useAdManager = (adConfig?: AdConfig) => {
     const videoRefState = useVideoStore.getState().videoRef;
     const adVideoRefState = useVideoStore.getState().adVideoRef;
 
-    if (!videoRefState || !currentAdState) return;
+    if (!currentAdState) return;
 
+    // Clean up ad video element
     if (adVideoRefState) {
       stopMediaElement(adVideoRefState);
       setAdVideoRef(null);
     }
 
+    // Reset ad state
     setIsAdPlaying(false);
     setCurrentAd(null);
     setAdType(null);
@@ -211,12 +216,22 @@ export const useAdManager = (adConfig?: AdConfig) => {
     setCanSkipAd(false);
     setSkipCountdown(0);
 
+    // Call end callback
     adConfig?.onAdEnd?.(currentAdState);
 
-    if (resumeAfterAdRef.current && adTypeState !== "post-roll") {
-      videoRefState.play().catch(() => undefined);
-      setPlaying(true);
-      setIsPlaying(true);
+    // Resume main video if needed
+    if (resumeAfterAdRef.current && adTypeState !== "post-roll" && videoRefState) {
+      // Small delay to ensure ad cleanup is complete
+      setTimeout(() => {
+        if (videoRefState && !videoRefState.paused) return;
+        videoRefState.play().catch(() => {
+          // If autoplay fails, user will need to click play
+          setPlaying(false);
+          setIsPlaying(false);
+        });
+        setPlaying(true);
+        setIsPlaying(true);
+      }, 100);
     }
     resumeAfterAdRef.current = false;
   }, [
@@ -319,7 +334,8 @@ export const useAdManager = (adConfig?: AdConfig) => {
       if (
         state.isAdPlaying ||
         !state.midRollQueue ||
-        state.midRollQueue.length === 0
+        state.midRollQueue.length === 0 ||
+        !state.videoRef
       ) {
         return;
       }
@@ -330,6 +346,12 @@ export const useAdManager = (adConfig?: AdConfig) => {
         state.currentTime >= nextAd.time &&
         !state.playedAdBreaks.includes(nextAd.id)
       ) {
+        // Clear interval to prevent duplicate triggers
+        if (midRollCheckIntervalRef.current) {
+          clearInterval(midRollCheckIntervalRef.current);
+          midRollCheckIntervalRef.current = null;
+        }
+
         const updatedQueue = state.midRollQueue.filter(
           (ad) => ad.id !== nextAd.id
         );
@@ -337,11 +359,13 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
         state.addPlayedAdBreak(nextAd.id);
 
-        const wasPlaying = !state.videoRef?.paused;
-        state.videoRef?.pause();
+        const wasPlaying = !state.videoRef.paused;
+        state.videoRef.pause();
         state.setPlaying(false);
         state.setIsPlaying(false);
         resumeAfterAdRef.current = wasPlaying;
+
+        stopMediaElement(state.adVideoRef);
 
         state.setIsAdPlaying(true);
         state.setCurrentAd(nextAd);
@@ -349,7 +373,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
         adConfig?.onAdStart?.(nextAd);
       }
-    }, 1000);
+    }, 500); // Check every 500ms for better accuracy
 
     return () => {
       if (midRollCheckIntervalRef.current) {
