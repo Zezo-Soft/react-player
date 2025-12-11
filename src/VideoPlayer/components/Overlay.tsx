@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, useMemo } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import { useShallow } from "zustand/react/shallow";
 import { VideoPlayerControls } from "./controls";
@@ -79,7 +79,9 @@ const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
     let timer: NodeJS.Timeout;
     if (showCountdown && countdownTime > 0 && episodeList.length > 0) {
       timer = setInterval(() => {
-        setCountdownTime(countdownTime - 1);
+        const currentTime = useVideoStore.getState().countdownTime;
+        const next = currentTime - 1;
+        setCountdownTime(next > 0 ? next : 0);
       }, 1000);
     }
     return () => {
@@ -134,6 +136,15 @@ const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
     onClose,
   ]);
 
+  // Memoize countdown display to prevent unnecessary re-renders
+  const shouldShowCountdown = useMemo(
+    () =>
+      showCountdown &&
+      episodeList.length > 0 &&
+      currentEpisodeIndex + 1 < episodeList.length,
+    [showCountdown, episodeList.length, currentEpisodeIndex]
+  );
+
   return (
     <div
       id="videoPlayerControls"
@@ -143,17 +154,15 @@ const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
     >
       {controls && !isAdPlaying && <VideoPlayerControls config={config} />}
 
-      {showCountdown &&
-        episodeList.length > 0 &&
-        currentEpisodeIndex + 1 < episodeList.length && (
-          <VideoActionButton
-            text="Next Episode"
-            onClick={handleNextEpisodeManually}
-            icon={<ArrowRight className="h-5 w-5 text-gray-900" />}
-            disabled={currentEpisodeIndex + 1 >= episodeList.length}
-            position="right"
-          />
-        )}
+      {shouldShowCountdown && (
+        <VideoActionButton
+          text="Next Episode"
+          onClick={handleNextEpisodeManually}
+          icon={<ArrowRight className="h-5 w-5 text-gray-900" />}
+          disabled={currentEpisodeIndex + 1 >= episodeList.length}
+          position="right"
+        />
+      )}
     </div>
   );
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, memo } from "react";
 import { secondsToMilliseconds, timeFormat } from "../../utils";
 import { useVideoStore } from "../../../store/VideoState";
 import { VideoSeekSlider } from "../time-line/TimeLine";
@@ -6,7 +6,27 @@ import "../time-line/time-line.css";
 import { IControlsBottomProps } from "../../../types";
 import { useShallow } from "zustand/react/shallow";
 
-const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
+// Memoized time formatter to prevent unnecessary recalculations
+const formatTimeMemo = (() => {
+  const cache = new Map<number, string>();
+  return (seconds: number): string => {
+    if (cache.has(seconds)) {
+      return cache.get(seconds)!;
+    }
+    const formatted = timeFormat(seconds);
+    cache.set(seconds, formatted);
+    // Limit cache size to prevent memory leaks
+    if (cache.size > 100) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
+    }
+    return formatted;
+  };
+})();
+
+const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
   const { videoRef, currentTime, isFullscreen, bufferedProgress, isAdPlaying } =
     useVideoStore(
       useShallow((state) => ({
@@ -17,6 +37,7 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
         isAdPlaying: state.isAdPlaying,
       }))
     );
+  
   const duration = videoRef?.duration ?? 0;
   const currentTimeValue = currentTime || 0;
   const bufferedValue = bufferedProgress || 0;
@@ -38,9 +59,32 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
     return secondsToMilliseconds(duration * (bufferedValue / 100));
   }, [bufferedValue, duration]);
 
-  const durationFormatted = useMemo(() => timeFormat(duration), [duration]);
+  // Round to nearest second for time display to reduce re-renders
+  const roundedCurrentTime = useMemo(
+    () => Math.floor(currentTimeValue),
+    [currentTimeValue]
+  );
+  const roundedDuration = useMemo(
+    () => Math.floor(duration),
+    [duration]
+  );
+
+  const durationFormatted = useMemo(
+    () => formatTimeMemo(roundedDuration),
+    [roundedDuration]
+  );
   const currentTimeFormatted = useMemo(
-    () => timeFormat(currentTimeValue),
+    () => formatTimeMemo(roundedCurrentTime),
+    [roundedCurrentTime]
+  );
+
+  // Memoize seek slider props to prevent unnecessary re-renders
+  const seekSliderMax = useMemo(
+    () => secondsToMilliseconds(duration),
+    [duration]
+  );
+  const seekSliderCurrentTime = useMemo(
+    () => secondsToMilliseconds(currentTimeValue),
     [currentTimeValue]
   );
 
@@ -51,8 +95,8 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
   return (
     <div className="px-10">
       <VideoSeekSlider
-        max={secondsToMilliseconds(duration)}
-        currentTime={secondsToMilliseconds(currentTimeValue)}
+        max={seekSliderMax}
+        currentTime={seekSliderCurrentTime}
         bufferTime={bufferTime}
         onChange={handleSeek}
         secondsPrefix="00:00:"
@@ -79,7 +123,9 @@ const BottomControls: React.FC<IControlsBottomProps> = ({ config }) => {
       </div>
     </div>
   );
-};
+});
+
+BottomControls.displayName = "BottomControls";
 
 export default BottomControls;
 

@@ -42,7 +42,6 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 
   const [adDuration, setAdDuration] = React.useState(0);
 
-  // Get ad duration from video element
   React.useEffect(() => {
     if (!adVideoRef || !isAdPlaying) {
       setAdDuration(0);

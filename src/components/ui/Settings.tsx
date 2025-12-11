@@ -22,15 +22,46 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
     streamType,
   } = useVideoStore();
 
-  const [speed, setSpeed] = React.useState(1);
+  // Load playback speed from localStorage or default to 1
+  const getStoredPlaybackSpeed = (): number => {
+    try {
+      const stored = localStorage.getItem("react-player-playback-speed");
+      if (stored) {
+        const speed = parseFloat(stored);
+        if (speedOptions.includes(speed)) {
+          return speed;
+        }
+      }
+    } catch (_error) {
+      // Ignore localStorage errors
+    }
+    return 1;
+  };
+
+  const [speed, setSpeed] = React.useState(getStoredPlaybackSpeed());
   const [activeMenu, setActiveMenu] = React.useState<
     "main" | "quality" | "subtitles" | "speed"
   >("main");
+
+  // Initialize playback speed from localStorage on mount
+  React.useEffect(() => {
+    if (videoRef) {
+      const storedSpeed = getStoredPlaybackSpeed();
+      videoRef.playbackRate = storedSpeed;
+      setSpeed(storedSpeed);
+    }
+  }, [videoRef]);
 
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
     if (videoRef) {
       videoRef.playbackRate = newSpeed;
+    }
+    // Persist to localStorage
+    try {
+      localStorage.setItem("react-player-playback-speed", newSpeed.toString());
+    } catch (_error) {
+      // Ignore localStorage errors
     }
   };
 
