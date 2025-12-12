@@ -99,7 +99,12 @@ const MiddleControls: React.FC = () => {
         isAdPlaying: state.isAdPlaying,
       }))
     );
-  const [isBuffering, setIsBuffering] = useState(false);
+  const { setIsBuffering } = useVideoStore(
+    useShallow((state) => ({
+      setIsBuffering: state.setIsBuffering,
+    }))
+  );
+  const [isBuffering, setIsBufferingLocal] = useState(false);
 
   const videoElement = isAdPlaying ? adVideoRef : videoRef;
 
@@ -149,17 +154,35 @@ const MiddleControls: React.FC = () => {
   useEffect(() => {
     if (!videoElement) return;
 
-    const handleWaiting = () => setIsBuffering(true);
-    const handlePlaying = () => setIsBuffering(false);
+    const handleWaiting = () => {
+      setIsBufferingLocal(true);
+      setIsBuffering(true);
+    };
+    const handlePlaying = () => {
+      setIsBufferingLocal(false);
+      setIsBuffering(false);
+    };
+    const handleCanPlay = () => {
+      setIsBufferingLocal(false);
+      setIsBuffering(false);
+    };
+    const handleStalled = () => {
+      setIsBufferingLocal(true);
+      setIsBuffering(true);
+    };
 
     videoElement.addEventListener("waiting", handleWaiting);
     videoElement.addEventListener("playing", handlePlaying);
+    videoElement.addEventListener("canplay", handleCanPlay);
+    videoElement.addEventListener("stalled", handleStalled);
 
     return () => {
       videoElement.removeEventListener("waiting", handleWaiting);
       videoElement.removeEventListener("playing", handlePlaying);
+      videoElement.removeEventListener("canplay", handleCanPlay);
+      videoElement.removeEventListener("stalled", handleStalled);
     };
-  }, [videoElement, isAdPlaying]);
+  }, [videoElement, isAdPlaying, setIsBuffering]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -202,7 +225,9 @@ const MiddleControls: React.FC = () => {
           className="w-[10vw]"
           icon={
             isBuffering ? (
-              <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+              <div className="relative">
+                <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+              </div>
             ) : isPlaying ? (
               <PauseIcon />
             ) : (

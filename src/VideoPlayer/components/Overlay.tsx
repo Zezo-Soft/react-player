@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, useMemo } from "react";
 import { useVideoStore } from "../../store/VideoState";
 import { useShallow } from "zustand/react/shallow";
 import { VideoPlayerControls } from "./controls";
@@ -10,7 +10,7 @@ import {
   CONTROLS_HIDE_DELAY_MS,
 } from "../constants";
 
-const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
+const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -79,7 +79,9 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     let timer: NodeJS.Timeout;
     if (showCountdown && countdownTime > 0 && episodeList.length > 0) {
       timer = setInterval(() => {
-        setCountdownTime(countdownTime - 1);
+        const currentTime = useVideoStore.getState().countdownTime;
+        const next = currentTime - 1;
+        setCountdownTime(next > 0 ? next : 0);
       }, 1000);
     }
     return () => {
@@ -108,7 +110,7 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     };
   }, [handleControlsInteraction]);
 
-  const handleNextEpisodeManually = () => {
+  const handleNextEpisodeManually = useCallback(() => {
     const nextIndex = currentEpisodeIndex + 1;
     if (nextIndex < episodeList.length && videoRef && episodeList[nextIndex]) {
       setCurrentEpisodeIndex(nextIndex);
@@ -122,7 +124,26 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     } else if (onClose) {
       onClose();
     }
-  };
+  }, [
+    currentEpisodeIndex,
+    episodeList,
+    videoRef,
+    setCurrentEpisodeIndex,
+    setAutoPlayNext,
+    setShowCountdown,
+    setCountdownTime,
+    handleControlsInteraction,
+    onClose,
+  ]);
+
+  // Memoize countdown display to prevent unnecessary re-renders
+  const shouldShowCountdown = useMemo(
+    () =>
+      showCountdown &&
+      episodeList.length > 0 &&
+      currentEpisodeIndex + 1 < episodeList.length,
+    [showCountdown, episodeList.length, currentEpisodeIndex]
+  );
 
   return (
     <div
@@ -133,19 +154,19 @@ const Overlay: React.FC<IPlayerConfig> = ({ config }) => {
     >
       {controls && !isAdPlaying && <VideoPlayerControls config={config} />}
 
-      {showCountdown &&
-        episodeList.length > 0 &&
-        currentEpisodeIndex + 1 < episodeList.length && (
-          <VideoActionButton
-            text="Next Episode"
-            onClick={handleNextEpisodeManually}
-            icon={<ArrowRight className="h-5 w-5 text-gray-900" />}
-            disabled={currentEpisodeIndex + 1 >= episodeList.length}
-            position="right"
-          />
-        )}
+      {shouldShowCountdown && (
+        <VideoActionButton
+          text="Next Episode"
+          onClick={handleNextEpisodeManually}
+          icon={<ArrowRight className="h-5 w-5 text-gray-900" />}
+          disabled={currentEpisodeIndex + 1 >= episodeList.length}
+          position="right"
+        />
+      )}
     </div>
   );
-};
+});
+
+Overlay.displayName = "Overlay";
 
 export default Overlay;

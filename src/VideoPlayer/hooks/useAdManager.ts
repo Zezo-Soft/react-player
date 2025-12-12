@@ -52,10 +52,13 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
   const preRollPlayedRef = useRef(false);
   const postRollPlayedRef = useRef(false);
-  const midRollCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
-  );
   const resumeAfterAdRef = useRef(false);
+  // Track maximum time reached to prevent ad replay when seeking backward
+  const maxTimeReachedRef = useRef(0);
+  // Throttle ad checking to prevent performance issues
+  const adCheckThrottleRef = useRef<number | null>(null);
+  // Track if we're currently processing an ad to prevent race conditions
+  const isProcessingAdRef = useRef(false);
 
   const stopMediaElement = useCallback((media?: HTMLMediaElement | null) => {
     if (!media) return;
@@ -75,51 +78,39 @@ export const useAdManager = (adConfig?: AdConfig) => {
       return;
     }
 
-    let sortedMidRolls = [...adConfig.midRoll].sort((a, b) => a.time - b.time);
+    // Filter out invalid ads and ensure all required fields are present
+    const validAds = adConfig.midRoll.filter(
+      (ad) =>
+        ad &&
+        typeof ad.time === "number" &&
+        ad.time >= 0 &&
+        ad.time < Number.MAX_SAFE_INTEGER &&
+        typeof ad.id === "string" &&
+        ad.id.trim() !== "" &&
+        typeof ad.adUrl === "string" &&
+        ad.adUrl.trim() !== "" &&
+        typeof ad.type === "string" &&
+        ad.type === "mid-roll"
+    );
 
-    if (adConfig.smartPlacement?.enabled) {
-      sortedMidRolls = applySmartPlacement(
-        sortedMidRolls,
-        duration,
-        adConfig.smartPlacement
-      );
+    if (validAds.length === 0) {
+      setMidRollQueue([]);
+      return;
     }
 
-    setMidRollQueue(sortedMidRolls);
-  }, [adConfig?.midRoll, adConfig?.smartPlacement, duration, setMidRollQueue]);
+    // Sort ads by time to ensure they play in order
+    const sortedMidRolls = [...validAds].sort((a, b) => a.time - b.time);
 
-  const applySmartPlacement = (
-    ads: AdBreak[],
-    videoDuration: number,
-    options: NonNullable<AdConfig["smartPlacement"]>
-  ): AdBreak[] => {
-    const minVideoDuration = options.minVideoDuration || 60;
-    const minGap = options.minGapBetweenAds || 30;
-    const avoidNearEnd = options.avoidNearEnd || 10;
+    // Remove duplicate IDs (keep first occurrence)
+    const uniqueAds = sortedMidRolls.filter(
+      (ad, index, self) => index === self.findIndex((a) => a.id === ad.id)
+    );
 
-    if (videoDuration < minVideoDuration) {
-      return [];
-    }
+    setMidRollQueue(uniqueAds);
+  }, [adConfig?.midRoll, setMidRollQueue]);
 
-    const validAds: AdBreak[] = [];
-    let lastAdTime = 0;
-
-    for (const ad of ads) {
-      if (ad.time < minGap) continue;
-
-      if (ad.time > videoDuration - avoidNearEnd) continue;
-
-      if (ad.time - lastAdTime < minGap) continue;
-
-      validAds.push(ad);
-      const adLength = Number.isFinite(ad.duration)
-        ? (ad.duration as number)
-        : 0;
-      lastAdTime = ad.time + adLength;
-    }
-
-    return validAds;
-  };
+  // Removed smartPlacement - users should configure exact ad times
+  // This ensures ads appear exactly when specified
 
   const playPreRollAd = async () => {
     if (!adConfig?.preRoll || preRollPlayedRef.current || !videoRef) return;
@@ -141,39 +132,56 @@ export const useAdManager = (adConfig?: AdConfig) => {
     adConfig.onAdStart?.(adBreak);
   };
 
-  const checkMidRollAds = () => {
-    if (!videoRef || isAdPlaying || midRollQueue.length === 0) return;
+  const playMidRollAd = useCallback(
+    async (adBreak: AdBreak) => {
+      if (!videoRef || isAdPlaying || isProcessingAdRef.current) return;
 
-    const nextAd = midRollQueue[0];
-    if (!nextAd) return;
+      // Prevent duplicate ad playback
+      if (playedAdBreaks.includes(adBreak.id)) return;
 
-    if (currentTime >= nextAd.time && !playedAdBreaks.includes(nextAd.id)) {
-      playMidRollAd(nextAd);
-    }
-  };
+      // Mark as processing to prevent race conditions
+      isProcessingAdRef.current = true;
 
-  const playMidRollAd = async (adBreak: AdBreak) => {
-    if (!videoRef || isAdPlaying) return;
+      const updatedQueue = midRollQueue.filter((ad) => ad.id !== adBreak.id);
+      setMidRollQueue(updatedQueue);
 
-    const updatedQueue = midRollQueue.filter((ad) => ad.id !== adBreak.id);
-    setMidRollQueue(updatedQueue);
+      addPlayedAdBreak(adBreak.id);
 
-    addPlayedAdBreak(adBreak.id);
+      const wasPlaying = !videoRef.paused;
+      videoRef.pause();
+      setPlaying(false);
+      setIsPlaying(false);
+      resumeAfterAdRef.current = wasPlaying;
 
-    const wasPlaying = !videoRef.paused;
-    videoRef.pause();
-    setPlaying(false);
-    setIsPlaying(false);
-    resumeAfterAdRef.current = wasPlaying;
+      stopMediaElement(useVideoStore.getState().adVideoRef);
 
-    stopMediaElement(useVideoStore.getState().adVideoRef);
+      setIsAdPlaying(true);
+      setCurrentAd(adBreak);
+      setAdType("mid-roll");
 
-    setIsAdPlaying(true);
-    setCurrentAd(adBreak);
-    setAdType("mid-roll");
+      adConfig?.onAdStart?.(adBreak);
 
-    adConfig?.onAdStart?.(adBreak);
-  };
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        isProcessingAdRef.current = false;
+      }, 100);
+    },
+    [
+      videoRef,
+      isAdPlaying,
+      playedAdBreaks,
+      midRollQueue,
+      setMidRollQueue,
+      addPlayedAdBreak,
+      setPlaying,
+      setIsPlaying,
+      setCurrentAd,
+      setAdType,
+      setIsAdPlaying,
+      adConfig,
+      stopMediaElement,
+    ]
+  );
 
   const playPostRollAd = async () => {
     if (!adConfig?.postRoll || postRollPlayedRef.current || !videoRef) return;
@@ -197,13 +205,18 @@ export const useAdManager = (adConfig?: AdConfig) => {
     const videoRefState = useVideoStore.getState().videoRef;
     const adVideoRefState = useVideoStore.getState().adVideoRef;
 
-    if (!videoRefState || !currentAdState) return;
+    if (!currentAdState) return;
 
+    // Reset processing flag
+    isProcessingAdRef.current = false;
+
+    // Clean up ad video element
     if (adVideoRefState) {
       stopMediaElement(adVideoRefState);
       setAdVideoRef(null);
     }
 
+    // Reset ad state
     setIsAdPlaying(false);
     setCurrentAd(null);
     setAdType(null);
@@ -211,12 +224,26 @@ export const useAdManager = (adConfig?: AdConfig) => {
     setCanSkipAd(false);
     setSkipCountdown(0);
 
+    // Call end callback
     adConfig?.onAdEnd?.(currentAdState);
 
-    if (resumeAfterAdRef.current && adTypeState !== "post-roll") {
-      videoRefState.play().catch(() => undefined);
-      setPlaying(true);
-      setIsPlaying(true);
+    // Resume main video if needed
+    if (
+      resumeAfterAdRef.current &&
+      adTypeState !== "post-roll" &&
+      videoRefState
+    ) {
+      // Small delay to ensure ad cleanup is complete
+      setTimeout(() => {
+        if (videoRefState && !videoRefState.paused) return;
+        videoRefState.play().catch(() => {
+          // If autoplay fails, user will need to click play
+          setPlaying(false);
+          setIsPlaying(false);
+        });
+        setPlaying(true);
+        setIsPlaying(true);
+      }, 100);
     }
     resumeAfterAdRef.current = false;
   }, [
@@ -305,59 +332,103 @@ export const useAdManager = (adConfig?: AdConfig) => {
     };
   }, [videoRef, adConfig?.preRoll]);
 
+  // Precise mid-roll ad checking with accurate timing
   useEffect(() => {
     if (!videoRef || !adConfig?.midRoll || isAdPlaying) {
-      if (midRollCheckIntervalRef.current) {
-        clearInterval(midRollCheckIntervalRef.current);
-        midRollCheckIntervalRef.current = null;
+      // Clear any pending throttle
+      if (adCheckThrottleRef.current !== null) {
+        cancelAnimationFrame(adCheckThrottleRef.current);
+        adCheckThrottleRef.current = null;
       }
       return;
     }
 
-    midRollCheckIntervalRef.current = setInterval(() => {
+    // Precise ad check function
+    const checkMidRollAds = () => {
+      // Clear throttle ref
+      adCheckThrottleRef.current = null;
+
       const state = useVideoStore.getState();
-      if (
-        state.isAdPlaying ||
-        !state.midRollQueue ||
-        state.midRollQueue.length === 0
-      ) {
+
+      // Skip if ad is already playing or being processed
+      if (state.isAdPlaying || isProcessingAdRef.current) {
         return;
       }
 
-      const nextAd = state.midRollQueue[0];
-      if (
-        nextAd &&
-        state.currentTime >= nextAd.time &&
-        !state.playedAdBreaks.includes(nextAd.id)
-      ) {
-        const updatedQueue = state.midRollQueue.filter(
-          (ad) => ad.id !== nextAd.id
-        );
-        state.setMidRollQueue(updatedQueue);
-
-        state.addPlayedAdBreak(nextAd.id);
-
-        const wasPlaying = !state.videoRef?.paused;
-        state.videoRef?.pause();
-        state.setPlaying(false);
-        state.setIsPlaying(false);
-        resumeAfterAdRef.current = wasPlaying;
-
-        state.setIsAdPlaying(true);
-        state.setCurrentAd(nextAd);
-        state.setAdType("mid-roll");
-
-        adConfig?.onAdStart?.(nextAd);
+      // Check if we have mid-roll ads in queue
+      if (!state.midRollQueue || state.midRollQueue.length === 0) {
+        return;
       }
-    }, 1000);
 
-    return () => {
-      if (midRollCheckIntervalRef.current) {
-        clearInterval(midRollCheckIntervalRef.current);
-        midRollCheckIntervalRef.current = null;
+      // Get current time directly from video element for maximum accuracy
+      const currentVideoTime = videoRef.currentTime || 0;
+
+      // Update max time reached (only forward, not backward)
+      if (currentVideoTime > maxTimeReachedRef.current) {
+        maxTimeReachedRef.current = currentVideoTime;
+      }
+
+      // Find the next ad in queue that should play
+      // Check ads in order, but skip already-played ones
+      for (const ad of state.midRollQueue) {
+        // Skip if already played
+        if (state.playedAdBreaks.includes(ad.id)) {
+          continue;
+        }
+
+        // Precise timing check: ad should trigger when we reach or pass its time
+        // Use 1 second tolerance to catch ads even if timeupdate fires slightly late
+        const timeDifference = currentVideoTime - ad.time;
+        const shouldTrigger = timeDifference >= 0 && timeDifference <= 1.0;
+
+        // Also check if we've reached the max time (prevents replay on backward seek)
+        // This ensures ads only play if we've actually watched past them
+        const hasReachedMaxTime = maxTimeReachedRef.current >= ad.time;
+
+        if (shouldTrigger && hasReachedMaxTime) {
+          // Play the ad and break (only one ad at a time)
+          playMidRollAd(ad);
+          break;
+        }
       }
     };
-  }, [videoRef, isAdPlaying, adConfig]);
+
+    // Throttle function using requestAnimationFrame for smooth performance
+    const throttledCheck = () => {
+      if (adCheckThrottleRef.current === null) {
+        adCheckThrottleRef.current = requestAnimationFrame(checkMidRollAds);
+      }
+    };
+
+    // Listen to timeupdate event (throttled for performance)
+    videoRef.addEventListener("timeupdate", throttledCheck);
+
+    // Also check immediately on seek to catch rapid seeks past ad times
+    const handleSeeking = () => {
+      // Force immediate check when seeking
+      if (adCheckThrottleRef.current !== null) {
+        cancelAnimationFrame(adCheckThrottleRef.current);
+        adCheckThrottleRef.current = null;
+      }
+      // Check immediately
+      checkMidRollAds();
+    };
+
+    videoRef.addEventListener("seeking", handleSeeking);
+    videoRef.addEventListener("seeked", handleSeeking);
+
+    return () => {
+      videoRef.removeEventListener("timeupdate", throttledCheck);
+      videoRef.removeEventListener("seeking", handleSeeking);
+      videoRef.removeEventListener("seeked", handleSeeking);
+
+      // Clear any pending animation frame
+      if (adCheckThrottleRef.current !== null) {
+        cancelAnimationFrame(adCheckThrottleRef.current);
+        adCheckThrottleRef.current = null;
+      }
+    };
+  }, [videoRef, isAdPlaying, adConfig, playMidRollAd]);
 
   useEffect(() => {
     if (!videoRef || !adConfig?.postRoll || postRollPlayedRef.current) return;
@@ -378,21 +449,54 @@ export const useAdManager = (adConfig?: AdConfig) => {
   useEffect(() => {
     if (!videoRef?.src) return;
 
+    // Reset ad state when video source changes
     preRollPlayedRef.current = false;
     postRollPlayedRef.current = false;
     resumeAfterAdRef.current = false;
+    maxTimeReachedRef.current = 0;
+    isProcessingAdRef.current = false;
+
+    // Clear any pending throttle
+    if (adCheckThrottleRef.current !== null) {
+      cancelAnimationFrame(adCheckThrottleRef.current);
+      adCheckThrottleRef.current = null;
+    }
+
     setIsAdPlaying(false);
     setCurrentAd(null);
     setAdType(null);
+
+    // Re-initialize mid-roll queue with strict validation
     if (adConfig?.midRoll && adConfig.midRoll.length > 0) {
-      const sortedMidRolls = [...adConfig.midRoll].sort(
-        (a, b) => a.time - b.time
+      // Filter and validate ads
+      const validAds = adConfig.midRoll.filter(
+        (ad) =>
+          ad &&
+          typeof ad.time === "number" &&
+          ad.time >= 0 &&
+          typeof ad.id === "string" &&
+          ad.id.trim() !== "" &&
+          typeof ad.adUrl === "string" &&
+          ad.adUrl.trim() !== "" &&
+          typeof ad.type === "string" &&
+          ad.type === "mid-roll"
       );
-      setMidRollQueue(sortedMidRolls);
+
+      if (validAds.length > 0) {
+        // Sort by time and remove duplicates
+        const sortedMidRolls = [...validAds].sort((a, b) => a.time - b.time);
+        const uniqueAds = sortedMidRolls.filter(
+          (ad, index, self) => index === self.findIndex((a) => a.id === ad.id)
+        );
+        setMidRollQueue(uniqueAds);
+      } else {
+        setMidRollQueue([]);
+      }
     } else {
       setMidRollQueue([]);
     }
 
+    // Clean up any lingering ad video
     const lingeringAdRef = useVideoStore.getState().adVideoRef;
     if (lingeringAdRef) {
       stopMediaElement(lingeringAdRef);

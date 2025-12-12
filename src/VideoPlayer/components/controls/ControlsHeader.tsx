@@ -24,6 +24,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     isAdPlaying,
     muted,
     setMuted,
+    adCurrentTime,
   } = useVideoStore(
     useShallow((state) => ({
       videoWrapperRef: state.videoWrapperRef,
@@ -35,8 +36,46 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       isAdPlaying: state.isAdPlaying,
       muted: state.muted,
       setMuted: state.setMuted,
+      adCurrentTime: state.adCurrentTime,
     }))
   );
+
+  const [adDuration, setAdDuration] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!adVideoRef || !isAdPlaying) {
+      setAdDuration(0);
+      return;
+    }
+
+    const updateDuration = () => {
+      if (adVideoRef.duration && Number.isFinite(adVideoRef.duration)) {
+        setAdDuration(adVideoRef.duration);
+      }
+    };
+
+    updateDuration();
+    adVideoRef.addEventListener("loadedmetadata", updateDuration);
+    adVideoRef.addEventListener("durationchange", updateDuration);
+
+    return () => {
+      adVideoRef.removeEventListener("loadedmetadata", updateDuration);
+      adVideoRef.removeEventListener("durationchange", updateDuration);
+    };
+  }, [adVideoRef, isAdPlaying]);
+
+  const formatTime = React.useCallback((seconds: number): string => {
+    if (isNaN(seconds) || seconds < 0) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }, []);
+
+  const adTimeRemaining = React.useMemo(() => {
+    if (adDuration <= 0 || adCurrentTime <= 0) return null;
+    const remaining = Math.max(0, adDuration - adCurrentTime);
+    return formatTime(remaining);
+  }, [adDuration, adCurrentTime, formatTime]);
 
   const [isPipActive, setIsPipActive] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -111,8 +150,13 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 
   const renderAdHeader = () => (
     <div className="flex items-center gap-4">
-      <span className="inline-flex items-center rounded bg-[#2D2F31] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-yellow-500">
-        Ad
+      <span className="inline-flex items-center gap-1 rounded-full px-4 py-2 font-medium text-xs tracking-wider text-red-600 border border-gray-700/60">
+        <span>Ad</span>
+        {adTimeRemaining && (
+          <span className="text-gray-300 font-normal normal-case ml-1 text-xs">
+            {adTimeRemaining}
+          </span>
+        )}
       </span>
     </div>
   );

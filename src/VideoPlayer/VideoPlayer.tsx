@@ -1,10 +1,11 @@
 import React from "react";
 import { useShallow } from "zustand/react/shallow";
+import { Loader } from "lucide-react";
 import { useVideoStore } from "../store/VideoState";
 import Overlay from "./components/Overlay";
 import SubtitleOverlay from "./components/SubtitleOverlay";
 import VideoActionButton from "../components/ui/VideoActionButton";
-import { VideoPlayerProps } from "./types/VideoPlayerTypes";
+import { VideoPlayerProps, WatchHistoryData } from "./types/VideoPlayerTypes";
 import {
   useVideoSource,
   useSubtitles,
@@ -15,191 +16,274 @@ import {
   useVideoEvents,
   useAdManager,
   usePrimaryVideoLifecycle,
+  useVideoError,
 } from "./hooks";
 import AdOverlay from "./components/AdOverlay";
+import ErrorOverlay from "./components/ErrorOverlay";
 import "../index.css";
 import "./styles/subtitles.css";
 import "./styles/ads.css";
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  trackSrc,
-  trackTitle,
-  intro,
-  onClose,
-  onError,
-  trackPoster,
-  isTrailer,
-  className,
-  type,
-  height,
-  width,
-  timeCodes,
-  getPreviewScreenUrl,
-  tracking,
-  subtitles,
-  episodeList,
-  currentEpisodeIndex = 0,
-  onEnded,
-  nextEpisodeConfig,
-  subtitleStyle,
-  showControls = true,
-  isMute = false,
-  ads,
-}) => {
-  const { setVideoWrapperRef } = useVideoStore(
-    useShallow((state) => ({
-      setVideoWrapperRef: state.setVideoWrapperRef,
-    }))
-  );
+const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
+  ({ video, style, events, features }) => {
+    const {
+      src: trackSrc,
+      title: trackTitle,
+      poster: trackPoster,
+      type,
+      isTrailer,
+      showControls = true,
+      isMute = false,
+      startFrom,
+    } = video;
 
-  const effectiveAds = React.useMemo(
-    () => (isTrailer ? undefined : ads),
-    [ads, isTrailer]
-  );
-  const hasPreRoll = React.useMemo(
-    () => Boolean(effectiveAds?.preRoll),
-    [effectiveAds?.preRoll]
-  );
-  const {
-    registerVideoRef,
-    videoRef,
-    isAdPlaying,
-    currentAd,
-    adType,
-    initialAdFinished,
-    shouldCoverMainVideo,
-    shouldShowPlaceholder,
-  } = usePrimaryVideoLifecycle({
-    hasPreRoll,
-    trackSrc,
-  });
+    const { className, width, height, subtitleStyle } = style || {};
 
-  useVideoSource(trackSrc, type);
-  useSubtitles(subtitles);
-  useSubtitleStyling(subtitleStyle);
-  useVideoTracking(tracking, episodeList, currentEpisodeIndex, onClose);
-  const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
-  useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
-  const {
-    onSeeked,
-    onTimeUpdate,
-    onLoadedMetadata,
-    onProgress,
-    onPlay,
-    onPause,
-    onEnded: onEndedHook,
-  } = useVideoEvents();
+    const { onEnded, onError, onClose, onWatchHistoryUpdate } = events || {};
 
-  const { skipAd } = useAdManager(effectiveAds);
+    const {
+      timeCodes,
+      getPreviewScreenUrl,
+      tracking,
+      subtitles,
+      episodeList,
+      currentEpisodeIndex = 0,
+      intro,
+      nextEpisodeConfig,
+      ads,
+    } = features || {};
 
-  return (
-    <div
-      ref={setVideoWrapperRef}
-      className={`video-player ${height || "h-full"} ${
-        width || "w-full"
-      } mx-auto absolute`}
-    >
-      {trackPoster && (
-        <div
-          className="pip-poster absolute inset-0 bg-center bg-cover hidden"
-          style={{ backgroundImage: `url(${trackPoster})` }}
-        />
-      )}
+    const { setVideoWrapperRef } = useVideoStore(
+      useShallow((state) => ({
+        setVideoWrapperRef: state.setVideoWrapperRef,
+      }))
+    );
 
-      <video
-        playsInline
-        preload={hasPreRoll ? "metadata" : "auto"}
-        ref={registerVideoRef}
-        onSeeked={onSeeked}
-        poster={trackPoster}
-        crossOrigin="anonymous"
-        controls={false}
-        disableRemotePlayback
-        controlsList="nodownload"
-        onContextMenu={(e) => e.preventDefault()}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onProgress={onProgress}
-        onPlay={onPlay}
-        onPause={onPause}
-        onEnded={(e) => {
-          onEndedHook(e);
-          onEnded?.(e);
-        }}
-        onError={(e) => {
-          onError?.(e);
-        }}
-        autoPlay={!hasPreRoll}
-        muted={isMute}
-        className={`w-full h-full relative ${className || ""} ${
-          shouldCoverMainVideo ? "opacity-0" : "opacity-100"
-        } transition-opacity duration-200 ease-out`}
-      />
-      {shouldShowPlaceholder && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black">
-          <span className="loader" />
-        </div>
-      )}
-      {showControls && initialAdFinished && (
-        <Overlay
-          config={{
-            headerConfig: {
-              config: {
-                isTrailer: isTrailer,
-                title: trackTitle,
-                onClose: onClose,
-                videoRef: videoRef as any,
-              },
+    const effectiveAds = React.useMemo(
+      () => (isTrailer ? undefined : ads),
+      [ads, isTrailer]
+    );
+    const hasPreRoll = React.useMemo(
+      () => Boolean(effectiveAds?.preRoll),
+      [effectiveAds?.preRoll]
+    );
+    const {
+      registerVideoRef,
+      videoRef,
+      isAdPlaying,
+      currentAd,
+      initialAdFinished,
+      shouldCoverMainVideo,
+      shouldShowPlaceholder,
+    } = usePrimaryVideoLifecycle({
+      hasPreRoll,
+      trackSrc,
+    });
+
+    const onWatchHistoryUpdateRef = React.useRef(onWatchHistoryUpdate);
+
+    React.useEffect(() => {
+      onWatchHistoryUpdateRef.current = onWatchHistoryUpdate;
+    }, [onWatchHistoryUpdate]);
+
+    const getWatchHistoryData =
+      React.useCallback((): WatchHistoryData | null => {
+        const video = useVideoStore.getState().videoRef;
+        if (!video || !video.duration || isNaN(video.duration)) return null;
+
+        const currentTime = video.currentTime || 0;
+        const duration = video.duration;
+        const progress = Math.round((currentTime / duration) * 100);
+        const isCompleted = progress >= 90;
+
+        return {
+          currentTime,
+          duration,
+          progress,
+          isCompleted,
+          watchedAt: Date.now(),
+        };
+      }, []);
+
+    const handleClose = React.useCallback(() => {
+      const historyData = getWatchHistoryData();
+      if (historyData && onWatchHistoryUpdate) {
+        onWatchHistoryUpdate(historyData);
+      }
+      onClose?.();
+    }, [getWatchHistoryData, onWatchHistoryUpdate, onClose]);
+
+    const overlayConfig = React.useMemo(
+      () => ({
+        headerConfig: {
+          config: {
+            isTrailer: isTrailer,
+            title: trackTitle,
+            onClose: handleClose,
+            videoRef: videoRef as any,
+          },
+        },
+        bottomConfig: {
+          config: {
+            seekBarConfig: {
+              timeCodes: timeCodes,
+              trackColor: "red",
+              getPreviewScreenUrl,
             },
-            bottomConfig: {
-              config: {
-                seekBarConfig: {
-                  timeCodes: timeCodes,
-                  trackColor: "red",
-                  getPreviewScreenUrl,
-                },
-              },
-            },
-          }}
-        />
-      )}
-      <SubtitleOverlay styleConfig={subtitleStyle} />
-      {showSkipIntro && !isAdPlaying && initialAdFinished && (
-        <VideoActionButton
-          text="Skip Intro"
-          onClick={handleSkipIntro}
-          position="left"
-        />
-      )}
-      {/* Ad Overlay */}
-      {isAdPlaying && currentAd && (
-        <AdOverlay
-          adBreak={currentAd}
-          onSkip={skipAd}
-          config={{
+          },
+        },
+      }),
+      [
+        isTrailer,
+        trackTitle,
+        handleClose,
+        videoRef,
+        timeCodes,
+        getPreviewScreenUrl,
+      ]
+    );
+
+    const adOverlayConfig = React.useMemo(
+      () => ({
+        config: {
+          headerConfig: {
             config: {
-              headerConfig: {
-                config: {
-                  isTrailer: isTrailer,
-                  title: trackTitle,
-                  onClose: onClose,
-                },
-              },
-              bottomConfig: {
-                config: {
-                  seekBarConfig: {
-                    timeCodes: timeCodes,
-                    trackColor: "red",
-                    getPreviewScreenUrl,
-                  },
-                },
+              isTrailer: isTrailer,
+              title: trackTitle,
+              onClose: handleClose,
+            },
+          },
+          bottomConfig: {
+            config: {
+              seekBarConfig: {
+                timeCodes: timeCodes,
+                trackColor: "red",
+                getPreviewScreenUrl,
               },
             },
+          },
+        },
+      }),
+      [isTrailer, trackTitle, handleClose, timeCodes, getPreviewScreenUrl]
+    );
+
+    useVideoSource(trackSrc, type);
+    useSubtitles(subtitles);
+    useSubtitleStyling(subtitleStyle);
+    useVideoTracking(tracking, episodeList, currentEpisodeIndex, handleClose);
+    const { showSkipIntro, handleSkipIntro } = useIntroSkip(intro);
+    useEpisodes(episodeList, currentEpisodeIndex, nextEpisodeConfig);
+    const {
+      onSeeked,
+      onTimeUpdate,
+      onLoadedMetadata,
+      onProgress,
+      onPlay,
+      onPause,
+      onEnded: onEndedHook,
+    } = useVideoEvents();
+
+    const { skipAd } = useAdManager(effectiveAds);
+    const { error, handleVideoError, retry } = useVideoError();
+
+    const hasResumedRef = React.useRef(false);
+
+    React.useEffect(() => {
+      return () => {
+        const historyData = getWatchHistoryData();
+        if (historyData && onWatchHistoryUpdateRef.current) {
+          onWatchHistoryUpdateRef.current(historyData);
+        }
+      };
+    }, [getWatchHistoryData]);
+
+    React.useEffect(() => {
+      if (!videoRef || !startFrom || hasResumedRef.current) return;
+
+      const handleCanPlay = () => {
+        if (!hasResumedRef.current && startFrom > 0) {
+          videoRef.currentTime = startFrom;
+          hasResumedRef.current = true;
+        }
+      };
+
+      videoRef.addEventListener("canplay", handleCanPlay);
+      return () => videoRef.removeEventListener("canplay", handleCanPlay);
+    }, [videoRef, startFrom]);
+
+    return (
+      <div
+        ref={setVideoWrapperRef}
+        className={`video-player ${height || "h-full"} ${
+          width || "w-full"
+        } mx-auto absolute`}
+      >
+        {trackPoster && (
+          <div
+            className="pip-poster absolute inset-0 bg-center bg-cover hidden"
+            style={{ backgroundImage: `url(${trackPoster})` }}
+          />
+        )}
+
+        <video
+          playsInline
+          preload={hasPreRoll ? "metadata" : "auto"}
+          ref={registerVideoRef}
+          onSeeked={onSeeked}
+          poster={trackPoster}
+          crossOrigin="anonymous"
+          controls={false}
+          disableRemotePlayback
+          controlsList="nodownload"
+          onContextMenu={(e) => e.preventDefault()}
+          onTimeUpdate={onTimeUpdate}
+          onLoadedMetadata={onLoadedMetadata}
+          onProgress={onProgress}
+          onPlay={onPlay}
+          onPause={onPause}
+          onEnded={(e) => {
+            onEndedHook(e);
+            onEnded?.(e);
           }}
+          onError={(e) => {
+            handleVideoError(e);
+            onError?.(e);
+          }}
+          autoPlay={!hasPreRoll}
+          muted={isMute}
+          className={`w-full h-full relative ${className || ""} ${
+            shouldCoverMainVideo ? "opacity-0" : "opacity-100"
+          } transition-opacity duration-200 ease-out`}
         />
-      )}
-    </div>
-  );
-};
+        {shouldShowPlaceholder && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
+            <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+          </div>
+        )}
+        {showControls && initialAdFinished && (
+          <Overlay config={overlayConfig} />
+        )}
+        <SubtitleOverlay styleConfig={subtitleStyle} />
+        {showSkipIntro && !isAdPlaying && initialAdFinished && (
+          <VideoActionButton
+            text="Skip Intro"
+            onClick={handleSkipIntro}
+            position="left"
+          />
+        )}
+        {isAdPlaying && currentAd && (
+          <AdOverlay
+            adBreak={currentAd}
+            onSkip={skipAd}
+            config={adOverlayConfig}
+          />
+        )}
+        {error && onError && <ErrorOverlay error={error} onRetry={retry} />}
+      </div>
+    );
+  }
+);
+
+VideoPlayer.displayName = "VideoPlayer";
 
 export default VideoPlayer;

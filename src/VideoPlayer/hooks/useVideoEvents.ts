@@ -104,7 +104,6 @@ export const useVideoEvents = () => {
   const onLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e?.currentTarget?.duration;
     if (typeof duration === "number" && !Number.isNaN(duration)) {
-      localStorage.setItem("current_time", "0");
       setDuration(duration);
     }
   };

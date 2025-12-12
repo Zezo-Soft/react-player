@@ -117,6 +117,18 @@ export interface StoreResetState {
   resetStore: () => void;
 }
 
+export interface VideoError {
+  code: number;
+  message: string;
+  type: "network" | "decode" | "src" | "unknown";
+}
+
+export interface VideoErrorState {
+  error: VideoError | null;
+  setError: (error: VideoError | null) => void;
+  clearError: () => void;
+}
+
 export interface AdsState {
   isAdPlaying: boolean;
   setIsAdPlaying: (isAdPlaying: boolean) => void;
@@ -148,4 +160,5 @@ export interface VideoState
     EpisodesState,
     IntroState,
     AdsState,
+    VideoErrorState,
     StoreResetState {}

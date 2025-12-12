@@ -9,9 +9,6 @@ export interface AdBreak {
   skipAfter?: number;
   duration?: number;
   sponsoredUrl?: string;
-  title?: string;
-  description?: string;
-  relevance?: "high" | "medium" | "low";
 }
 
 export interface AdConfig {
