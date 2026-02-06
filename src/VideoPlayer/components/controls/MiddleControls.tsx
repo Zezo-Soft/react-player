@@ -226,7 +226,7 @@ const MiddleControls: React.FC = () => {
           icon={
             isBuffering ? (
               <div className="relative">
-                <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+                <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />
               </div>
             ) : isPlaying ? (
               <PauseIcon />
@@ -252,7 +252,7 @@ const MiddleControls: React.FC = () => {
         className="w-[10vw]"
         icon={
           isBuffering ? (
-            <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+            <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />
           ) : isPlaying ? (
             <PauseIcon />
           ) : (

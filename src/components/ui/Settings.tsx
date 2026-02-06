@@ -114,15 +114,17 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
     return bitrateLabel || "Quality";
   };
 
-  // Get quality label for display
+  // Get quality label for display (main menu subtitle)
   const getQualityLabel = () => {
-    if (!isAdaptiveStream) return "Auto";
+    if (!isAdaptiveStream || qualityOptions.length === 0) return "Off";
     if (currentQuality === "auto") return "Auto";
     const option = qualityOptions.find((q) => q.value === currentQuality);
     if (!option) return "Auto";
     const label = getQualityName(option.height, option.bitrate);
     return label === "Quality" ? "Custom" : label;
   };
+
+  const hasQualityOptions = isAdaptiveStream && qualityOptions.length > 0;
 
   // Get estimated data usage using bitrate when available
   const getDataUsage = (height: number, bitrate?: number) => {
@@ -264,47 +266,15 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
               </div>
 
               <div className="space-y-3">
-                {/* Auto Quality */}
-                <button
-                  onClick={() => {
-                    if (isAdaptiveStream) {
-                      QualityManager.setQuality(streamType, "auto");
-                    }
-                  }}
-                  disabled={!isAdaptiveStream}
-                  className={`w-full text-left px-4 py-3 rounded-md transition-all ${
-                    activeQuality === "auto"
-                      ? "bg-white/10"
-                      : isAdaptiveStream
-                      ? "hover:bg-white/5"
-                      : "opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-white font-semibold text-lg mb-1">
-                        Auto
-                      </div>
-                      <div className="text-gray-400 text-sm">
-                        Adjust to your connection
-                      </div>
-                    </div>
-                    {activeQuality === "auto" && (
-                      <Check className="w-6 h-6 text-white mt-1" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Quality Levels */}
-                {isAdaptiveStream && qualityOptions.length > 0 ? (
-                  qualityOptions.map((level) => (
+                {hasQualityOptions ? (
+                  <>
+                    {/* Auto Quality */}
                     <button
-                      key={level.value}
                       onClick={() =>
-                        QualityManager.setQuality(streamType, level.value)
+                        QualityManager.setQuality(streamType, "auto")
                       }
                       className={`w-full text-left px-4 py-3 rounded-md transition-all ${
-                        activeQuality === level.value
+                        activeQuality === "auto"
                           ? "bg-white/10"
                           : "hover:bg-white/5"
                       }`}
@@ -312,23 +282,57 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="text-white font-semibold text-lg mb-1">
-                            {getQualityName(level.height, level.bitrate)}
+                            Auto
                           </div>
                           <div className="text-gray-400 text-sm">
-                            {getDataUsage(level.height, level.bitrate)}
+                            Adjust to your connection
                           </div>
                         </div>
-                        {(activeQuality === level.value ||
-                          currentQuality === level.value) && (
+                        {activeQuality === "auto" && (
                           <Check className="w-6 h-6 text-white mt-1" />
                         )}
                       </div>
                     </button>
-                  ))
+
+                    {/* Quality Levels */}
+                    {qualityOptions.map((level) => (
+                      <button
+                        key={level.value}
+                        onClick={() =>
+                          QualityManager.setQuality(streamType, level.value)
+                        }
+                        className={`w-full text-left px-4 py-3 rounded-md transition-all ${
+                          activeQuality === level.value
+                            ? "bg-white/10"
+                            : "hover:bg-white/5"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="text-white font-semibold text-lg mb-1">
+                              {getQualityName(level.height, level.bitrate)}
+                            </div>
+                            <div className="text-gray-400 text-sm">
+                              {getDataUsage(level.height, level.bitrate)}
+                            </div>
+                          </div>
+                        {activeQuality === level.value && (
+                          <Check className="w-6 h-6 text-white mt-1" />
+                        )}
+                        </div>
+                      </button>
+                    ))}
+                  </>
                 ) : (
-                  <div className="px-4 py-3 text-gray-400 text-sm bg-white/5 rounded-md">
-                    Quality selection is unavailable for this stream.
-                  </div>
+                  /* No quality options: show only Off */
+                  <button
+                    className="w-full text-left px-4 py-3 rounded-md bg-white/10 cursor-default"
+                  >
+                    <div className="flex items-start justify-between">
+                      <span className="text-white font-semibold text-lg">Off</span>
+                      <Check className="w-6 h-6 text-white mt-1" />
+                    </div>
+                  </button>
                 )}
               </div>
             </div>

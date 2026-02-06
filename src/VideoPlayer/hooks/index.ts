@@ -8,4 +8,3 @@ export { useVideoEvents } from "./useVideoEvents";
 export { useAdManager } from "./useAdManager";
 export { usePrimaryVideoLifecycle } from "./usePrimaryVideoLifecycle";
 export { useVideoError } from "./useVideoError";
-export { useNetworkSpeed } from "./useNetworkSpeed";

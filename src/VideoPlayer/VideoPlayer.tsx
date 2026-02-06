@@ -257,9 +257,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
         />
         {shouldShowPlaceholder && (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
-            <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+            <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />
           </div>
-        )}
+        )} 
         {showControls && initialAdFinished && (
           <Overlay config={overlayConfig} />
         )}
