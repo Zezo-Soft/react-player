@@ -1,10 +1,11 @@
 import * as React from "react";
-import { Check, ChevronRight } from "lucide-react";
-import Popover from "../ui/Popover";
-import { Settings as SettingsIcon } from "lucide-react";
+import { Check, ChevronRight, Settings as SettingsIcon } from "lucide-react";
+import Popover from "./Popover";
 import Tooltip from "./Tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { QualityManager } from "../../VideoPlayer/utils";
+
+const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 interface SettingsProps {
   iconClassName: string;
@@ -22,19 +23,14 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
     streamType,
   } = useVideoStore();
 
-  // Load playback speed from localStorage or default to 1
   const getStoredPlaybackSpeed = (): number => {
     try {
       const stored = localStorage.getItem("react-player-playback-speed");
       if (stored) {
         const speed = parseFloat(stored);
-        if (speedOptions.includes(speed)) {
-          return speed;
-        }
+        if (speedOptions.includes(speed)) return speed;
       }
-    } catch (_error) {
-      // Ignore localStorage errors
-    }
+    } catch {}
     return 1;
   };
 
@@ -43,7 +39,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
     "main" | "quality" | "subtitles" | "speed"
   >("main");
 
-  // Initialize playback speed from localStorage on mount
   React.useEffect(() => {
     if (videoRef) {
       const storedSpeed = getStoredPlaybackSpeed();
@@ -54,15 +49,10 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
 
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
-    if (videoRef) {
-      videoRef.playbackRate = newSpeed;
-    }
-    // Persist to localStorage
+    if (videoRef) videoRef.playbackRate = newSpeed;
     try {
       localStorage.setItem("react-player-playback-speed", newSpeed.toString());
-    } catch (_error) {
-      // Ignore localStorage errors
-    }
+    } catch {}
   };
 
   const isAdaptiveStream = streamType === "hls" || streamType === "dash";
@@ -76,9 +66,7 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
         originalIndex: number;
       }>;
     }
-
     const prefix = streamType === "dash" ? "dash" : "hls";
-
     return [...qualityLevels]
       .map((level) => ({
         value: `${prefix}-${level.originalIndex}`,
@@ -95,26 +83,20 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
       });
   }, [qualityLevels, isAdaptiveStream, streamType]);
 
-  const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
-
   const handleBack = () => setActiveMenu("main");
 
   const formatBitrate = (bitrate?: number) => {
     if (!bitrate || bitrate <= 0) return "";
-    if (bitrate >= 1_000_000) {
-      return `${(bitrate / 1_000_000).toFixed(1)} Mbps`;
-    }
+    if (bitrate >= 1_000_000) return `${(bitrate / 1_000_000).toFixed(1)} Mbps`;
     return `${Math.round(bitrate / 1000)} Kbps`;
   };
 
-  // Get quality label: show explicit resolution to avoid duplicates
   const getQualityName = (height: number, bitrate?: number) => {
     if (height && height > 0) return `${height}p`;
     const bitrateLabel = formatBitrate(bitrate);
     return bitrateLabel || "Quality";
   };
 
-  // Get quality label for display (main menu subtitle)
   const getQualityLabel = () => {
     if (!isAdaptiveStream || qualityOptions.length === 0) return "Off";
     if (currentQuality === "auto") return "Auto";
@@ -126,15 +108,11 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
 
   const hasQualityOptions = isAdaptiveStream && qualityOptions.length > 0;
 
-  // Get estimated data usage using bitrate when available
   const getDataUsage = (height: number, bitrate?: number) => {
-    // bitrate in bits/sec -> GB/hour
     if (bitrate && bitrate > 0) {
       const gbPerHour = (bitrate * 3600) / 8 / 1e9;
-      const rounded = gbPerHour.toFixed(2);
-      return `Uses about ${rounded} GB per hour`;
+      return `Uses about ${gbPerHour.toFixed(2)} GB per hour`;
     }
-    // Fallback by resolution when bitrate missing
     if (height >= 2160) return "Uses about 7.00 GB per hour";
     if (height >= 1440) return "Uses about 3.50 GB per hour";
     if (height >= 1080) return "Uses about 2.50 GB per hour";
@@ -146,19 +124,14 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
 
   return (
     <Tooltip title="Settings">
-      <Popover
-        button={<SettingsIcon className={iconClassName} />}
-        align="center"
-      >
+      <Popover button={<SettingsIcon className={iconClassName} />} align="center">
         <div className="bg-[#3a4049] text-white rounded-[7px] w-80 overflow-hidden">
-          {/* Main Menu */}
           {activeMenu === "main" && (
             <div className="p-4">
               <h3 className="text-white font-bold text-xl mb-4">Settings</h3>
               <p className="text-gray-300 text-sm mb-4">Customize playback</p>
 
               <div className="space-y-0 border-t border-gray-600">
-                {/* Quality Option */}
                 <button
                   onClick={() => setActiveMenu("quality")}
                   className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
@@ -189,7 +162,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </button>
 
-                {/* Subtitles Option */}
                 <button
                   onClick={() => setActiveMenu("subtitles")}
                   className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
@@ -220,7 +192,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </button>
 
-                {/* Speed Option */}
                 <button
                   onClick={() => setActiveMenu("speed")}
                   className="w-full flex items-center justify-between py-4 rounded-[5px] transition-colors"
@@ -252,7 +223,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
             </div>
           )}
 
-          {/* Quality Menu */}
           {activeMenu === "quality" && (
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
@@ -268,7 +238,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
               <div className="space-y-3">
                 {hasQualityOptions ? (
                   <>
-                    {/* Auto Quality */}
                     <button
                       onClick={() =>
                         QualityManager.setQuality(streamType, "auto")
@@ -294,7 +263,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                       </div>
                     </button>
 
-                    {/* Quality Levels */}
                     {qualityOptions.map((level) => (
                       <button
                         key={level.value}
@@ -316,20 +284,21 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                               {getDataUsage(level.height, level.bitrate)}
                             </div>
                           </div>
-                        {activeQuality === level.value && (
-                          <Check className="w-6 h-6 text-white mt-1" />
-                        )}
+                          {activeQuality === level.value && (
+                            <Check className="w-6 h-6 text-white mt-1" />
+                          )}
                         </div>
                       </button>
                     ))}
                   </>
                 ) : (
-                  /* No quality options: show only Off */
                   <button
                     className="w-full text-left px-4 py-3 rounded-md bg-white/10 cursor-default"
                   >
                     <div className="flex items-start justify-between">
-                      <span className="text-white font-semibold text-lg">Off</span>
+                      <span className="text-white font-semibold text-lg">
+                        Off
+                      </span>
                       <Check className="w-6 h-6 text-white mt-1" />
                     </div>
                   </button>
@@ -338,7 +307,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
             </div>
           )}
 
-          {/* Subtitles Menu */}
           {activeMenu === "subtitles" && (
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
@@ -352,7 +320,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
               </div>
 
               <div className="space-y-3">
-                {/* Off Option */}
                 <button
                   onClick={() => setActiveSubtitle(null)}
                   className={`w-full text-left px-4 py-3 rounded-[5px] transition-all flex items-center justify-between ${
@@ -360,10 +327,11 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                   }`}
                 >
                   <span className="text-white font-semibold text-lg">Off</span>
-                  {!activeSubtitle && <Check className="w-6 h-6 text-white" />}
+                  {!activeSubtitle && (
+                    <Check className="w-6 h-6 text-white" />
+                  )}
                 </button>
 
-                {/* Subtitle Options */}
                 {subtitles?.map((subtitle, index) => (
                   <button
                     key={index}
@@ -386,7 +354,6 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
             </div>
           )}
 
-          {/* Speed Menu */}
           {activeMenu === "speed" && (
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
@@ -396,7 +363,9 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                 >
                   <ChevronRight className="w-6 h-6 text-white rotate-180" />
                 </button>
-                <h3 className="text-white font-bold text-xl">Playback Speed</h3>
+                <h3 className="text-white font-bold text-xl">
+                  Playback Speed
+                </h3>
               </div>
 
               <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -411,7 +380,9 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
                     <span className="text-white font-semibold text-lg">
                       {s === 1 ? "Normal" : `${s}x`}
                     </span>
-                    {speed === s && <Check className="w-6 h-6 text-white" />}
+                    {speed === s && (
+                      <Check className="w-6 h-6 text-white" />
+                    )}
                   </button>
                 ))}
               </div>

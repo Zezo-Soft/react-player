@@ -15,7 +15,6 @@ const VideoActionButton: React.FC<VideoActionButtonProps> = React.memo(({
   disabled = false,
   position = "left",
 }) => {
-  // Increase icon size and apply consistent color to icon
   const renderedIcon = icon
     ? React.cloneElement(
         icon as React.ReactElement,

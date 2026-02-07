@@ -127,7 +127,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         await document.exitPictureInPicture();
         setIsPipActive(false);
       }
-    } catch (_error) {}
+    } catch {}
   };
 
   React.useEffect(() => {
@@ -143,9 +143,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
 
   const handleClose = () => {
     resetStore();
-    if (config?.onClose) {
-      config.onClose();
-    }
+    config?.onClose?.();
   };
 
   const renderAdHeader = () => (
