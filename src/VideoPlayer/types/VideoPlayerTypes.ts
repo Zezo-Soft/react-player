@@ -23,11 +23,20 @@ export interface VideoProps {
   startFrom?: number;
 }
 
+/** Video quality config – subtitleStyle jaisa props */
+export interface VideoQualityConfig {
+  /** Initial quality: "auto" ya level id (e.g. "hls-0", "dash-1") */
+  defaultQuality?: "auto" | string;
+  /** Settings menu me Quality option dikhe (default: true) */
+  showInSettings?: boolean;
+}
+
 export interface StyleProps {
   className?: string;
   width?: string;
   height?: string;
   subtitleStyle?: SubtitleStyleConfig;
+  qualityConfig?: VideoQualityConfig;
 }
 
 export interface EventProps {

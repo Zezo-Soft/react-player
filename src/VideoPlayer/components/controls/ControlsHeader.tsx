@@ -181,7 +181,12 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       {isAdPlaying ? renderAdHeader() : renderVideoHeader()}
 
       <div className="flex items-center gap-7 text-white">
-        {!isAdPlaying && <Settings iconClassName={iconClassName} />}
+        {!isAdPlaying && (
+          <Settings
+            iconClassName={iconClassName}
+            qualityConfig={config?.qualityConfig}
+          />
+        )}
 
         <div onClick={handleMute}>
           {muted ? (

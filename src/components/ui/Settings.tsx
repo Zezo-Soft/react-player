@@ -4,14 +4,20 @@ import Popover from "./Popover";
 import Tooltip from "./Tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { QualityManager } from "../../VideoPlayer/utils";
+import type { VideoQualityConfig } from "../../VideoPlayer/types/VideoPlayerTypes";
 
 const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 interface SettingsProps {
   iconClassName: string;
+  qualityConfig?: VideoQualityConfig;
 }
 
-const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
+const Settings: React.FC<SettingsProps> = ({
+  iconClassName,
+  qualityConfig,
+}) => {
+  const showQualityInSettings = qualityConfig?.showInSettings !== false;
   const {
     qualityLevels,
     activeQuality,
@@ -132,35 +138,37 @@ const Settings: React.FC<SettingsProps> = ({ iconClassName }) => {
               <p className="text-gray-300 text-sm mb-4">Customize playback</p>
 
               <div className="space-y-0 border-t border-gray-600">
-                <button
-                  onClick={() => setActiveMenu("quality")}
-                  className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500 rounded-md">
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-white font-semibold">Quality</div>
-                      <div className="text-gray-400 text-sm">
-                        {getQualityLabel()}
+                {showQualityInSettings && (
+                  <button
+                    onClick={() => setActiveMenu("quality")}
+                    className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-500 rounded-md">
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-white font-semibold">Quality</div>
+                        <div className="text-gray-400 text-sm">
+                          {getQualityLabel()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </button>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </button>
+                )}
 
                 <button
                   onClick={() => setActiveMenu("subtitles")}
