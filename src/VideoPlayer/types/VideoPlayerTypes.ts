@@ -23,11 +23,8 @@ export interface VideoProps {
   startFrom?: number;
 }
 
-/** Video quality config – subtitleStyle jaisa props */
 export interface VideoQualityConfig {
-  /** Initial quality: "auto" ya level id (e.g. "hls-0", "dash-1") */
   defaultQuality?: "auto" | string;
-  /** Settings menu me Quality option dikhe (default: true) */
   showInSettings?: boolean;
 }
 
@@ -43,7 +40,6 @@ export interface EventProps {
   onEnded?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   onError?: (e?: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   onClose?: () => void;
-  /** Called when player closes with watch progress data for history tracking */
   onWatchHistoryUpdate?: (data: WatchHistoryData) => void;
 }
 
