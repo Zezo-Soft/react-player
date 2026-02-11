@@ -20,36 +20,10 @@ export const timeFormat = (seconds: number) => {
 /**
  * @description
  * @param seconds
- */
-export const timeFormatForContent = (seconds: number) => {
-  if (isNaN(seconds)) {
-    return `0 min`;
-  }
-  const date = new Date(seconds * 1000);
-  const hh = date.getUTCHours();
-  const mm = date.getUTCMinutes();
-  if (hh) {
-    return `${hh}h ${mm.toString().padStart(2, "0")}min`;
-  }
-  return `${mm}min`;
-};
-
-/**
- * @description
- * @param seconds
  * @returns
  */
 export const secondsToMilliseconds = (seconds: number) => {
   return seconds * 1000;
-};
-
-/**
- * @description
- * @param milliseconds
- * @returns
- */
-export const millisecondsToSeconds = (milliseconds: number) => {
-  return milliseconds / 1000;
 };
 
 /**

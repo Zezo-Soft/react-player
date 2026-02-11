@@ -19,7 +19,6 @@ const Popover: React.FC<PopoverProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -51,7 +50,6 @@ const Popover: React.FC<PopoverProps> = ({
     setIsOpen((prev) => (closeOnButtonClick ? !prev : true));
   };
 
-  // Get alignment classes
   const getAlignmentClasses = () => {
     switch (align) {
       case "center":
@@ -64,7 +62,6 @@ const Popover: React.FC<PopoverProps> = ({
     }
   };
 
-  // Arrow is always centered regardless of popover alignment
   const getArrowPositionClasses = () => {
     return "left-1/2 -translate-x-1/2";
   };
@@ -80,7 +77,6 @@ const Popover: React.FC<PopoverProps> = ({
           ref={popoverRef}
           className={`absolute ${getAlignmentClasses()} mt-2 w-fit bg-[#3a4049] text-white shadow-2xl rounded-lg border border-white/10 z-50 p-0 transition-all duration-200 ${className}`}
         >
-          {/* Optional Arrow */}
           <div
             className={`absolute -top-2 ${getArrowPositionClasses()} w-3 h-3 bg-[#3a4049] transform rotate-45 border-l border-t border-white/10 z-[-1]`}
           />

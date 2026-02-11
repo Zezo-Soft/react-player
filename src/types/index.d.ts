@@ -1,5 +1,6 @@
 import { SubtitleTrack } from "../store";
 import { TimeCode } from "../VideoPlayer/components/time-line/TimeLine";
+import { VideoQualityConfig } from "../VideoPlayer/types/VideoPlayerTypes";
 
 export interface IControlsHeaderProps {
   config?: {
@@ -9,6 +10,7 @@ export interface IControlsHeaderProps {
     subtitles?: SubtitleTrack[];
     activeSubtitle?: { lang: string; label: string; url: string } | null;
     videoRef?: any;
+    qualityConfig?: VideoQualityConfig;
   };
 }
 

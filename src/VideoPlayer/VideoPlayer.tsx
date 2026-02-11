@@ -37,7 +37,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       startFrom,
     } = video;
 
-    const { className, width, height, subtitleStyle } = style || {};
+    const { className, width, height, subtitleStyle, qualityConfig } =
+      style || {};
 
     const { onEnded, onError, onClose, onWatchHistoryUpdate } = events || {};
 
@@ -53,11 +54,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       ads,
     } = features || {};
 
-    const { setVideoWrapperRef } = useVideoStore(
+    const { setVideoWrapperRef, setActiveQuality } = useVideoStore(
       useShallow((state) => ({
         setVideoWrapperRef: state.setVideoWrapperRef,
+        setActiveQuality: state.setActiveQuality,
       }))
     );
+
+    React.useEffect(() => {
+      if (qualityConfig?.defaultQuality) {
+        setActiveQuality(qualityConfig.defaultQuality);
+      }
+    }, [qualityConfig?.defaultQuality, setActiveQuality]);
 
     const effectiveAds = React.useMemo(
       () => (isTrailer ? undefined : ads),
@@ -121,6 +129,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             title: trackTitle,
             onClose: handleClose,
             videoRef: videoRef as any,
+            qualityConfig,
           },
         },
         bottomConfig: {
@@ -140,6 +149,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
         videoRef,
         timeCodes,
         getPreviewScreenUrl,
+        qualityConfig,
       ]
     );
 
@@ -257,9 +267,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
         />
         {shouldShowPlaceholder && (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
-            <Loader className="w-24 h-24 lg:w-32 lg:h-32 animate-spin text-white" />
+            <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />
           </div>
-        )}
+        )} 
         {showControls && initialAdFinished && (
           <Overlay config={overlayConfig} />
         )}

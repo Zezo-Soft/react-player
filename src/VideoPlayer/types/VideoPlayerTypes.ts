@@ -23,18 +23,23 @@ export interface VideoProps {
   startFrom?: number;
 }
 
+export interface VideoQualityConfig {
+  defaultQuality?: "auto" | string;
+  showInSettings?: boolean;
+}
+
 export interface StyleProps {
   className?: string;
   width?: string;
   height?: string;
   subtitleStyle?: SubtitleStyleConfig;
+  qualityConfig?: VideoQualityConfig;
 }
 
 export interface EventProps {
   onEnded?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   onError?: (e?: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   onClose?: () => void;
-  /** Called when player closes with watch progress data for history tracking */
   onWatchHistoryUpdate?: (data: WatchHistoryData) => void;
 }
 

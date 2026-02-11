@@ -6,21 +6,15 @@ import "../time-line/time-line.css";
 import { IControlsBottomProps } from "../../../types";
 import { useShallow } from "zustand/react/shallow";
 
-// Memoized time formatter to prevent unnecessary recalculations
 const formatTimeMemo = (() => {
   const cache = new Map<number, string>();
   return (seconds: number): string => {
-    if (cache.has(seconds)) {
-      return cache.get(seconds)!;
-    }
+    if (cache.has(seconds)) return cache.get(seconds)!;
     const formatted = timeFormat(seconds);
     cache.set(seconds, formatted);
-    // Limit cache size to prevent memory leaks
     if (cache.size > 100) {
       const firstKey = cache.keys().next().value;
-      if (firstKey !== undefined) {
-        cache.delete(firstKey);
-      }
+      if (firstKey !== undefined) cache.delete(firstKey);
     }
     return formatted;
   };
@@ -37,37 +31,29 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
         isAdPlaying: state.isAdPlaying,
       }))
     );
-  
+
   const duration = videoRef?.duration ?? 0;
   const currentTimeValue = currentTime || 0;
   const bufferedValue = bufferedProgress || 0;
 
   const handleSeek = useCallback(
     (currentTimeInMs: number) => {
-      if (!videoRef) {
-        return;
-      }
+      if (!videoRef) return;
       videoRef.currentTime = currentTimeInMs / 1000;
     },
     [videoRef]
   );
 
   const bufferTime = useMemo(() => {
-    if (!duration) {
-      return 0;
-    }
+    if (!duration) return 0;
     return secondsToMilliseconds(duration * (bufferedValue / 100));
   }, [bufferedValue, duration]);
 
-  // Round to nearest second for time display to reduce re-renders
   const roundedCurrentTime = useMemo(
     () => Math.floor(currentTimeValue),
     [currentTimeValue]
   );
-  const roundedDuration = useMemo(
-    () => Math.floor(duration),
-    [duration]
-  );
+  const roundedDuration = useMemo(() => Math.floor(duration), [duration]);
 
   const durationFormatted = useMemo(
     () => formatTimeMemo(roundedDuration),
@@ -78,7 +64,6 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
     [roundedCurrentTime]
   );
 
-  // Memoize seek slider props to prevent unnecessary re-renders
   const seekSliderMax = useMemo(
     () => secondsToMilliseconds(duration),
     [duration]
@@ -88,9 +73,7 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
     [currentTimeValue]
   );
 
-  if (isAdPlaying) {
-    return null;
-  }
+  if (isAdPlaying) return null;
 
   return (
     <div className="px-10">
@@ -128,5 +111,3 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
 BottomControls.displayName = "BottomControls";
 
 export default BottomControls;
-
-
