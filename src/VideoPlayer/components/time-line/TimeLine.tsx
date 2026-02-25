@@ -27,6 +27,11 @@ export interface TimeLineProps {
   onChange: (time: number, offsetTime: number) => void;
   getPreviewScreenUrl?: (hoverTimeValue: number) => string;
   trackColor?: string;
+  bufferColor?: string;
+  hoverColor?: string;
+  thumbColor?: string;
+  trackBackgroundColor?: string;
+  isLive?: boolean;
 }
 
 export const VideoSeekSlider: React.FC<TimeLineProps> = ({
@@ -42,6 +47,11 @@ export const VideoSeekSlider: React.FC<TimeLineProps> = ({
   onChange = () => undefined,
   getPreviewScreenUrl,
   trackColor,
+  bufferColor,
+  hoverColor,
+  thumbColor,
+  trackBackgroundColor,
+  isLive = false,
 }) => {
   const [seekHoverPosition, setSeekHoverPosition] = useState(0);
   const [label, setLabel] = useState("");
@@ -177,6 +187,9 @@ export const VideoSeekSlider: React.FC<TimeLineProps> = ({
             label={label}
             setLabel={setLabel}
             trackColor={trackColor}
+            bufferColor={bufferColor}
+            hoverColor={hoverColor}
+            trackBackgroundColor={trackBackgroundColor}
           />
         )}
 
@@ -189,6 +202,9 @@ export const VideoSeekSlider: React.FC<TimeLineProps> = ({
             bufferTime={bufferTime}
             seekHoverTime={hoverTimeValue}
             trackColor={trackColor}
+            bufferColor={bufferColor}
+            hoverColor={hoverColor}
+            trackBackgroundColor={trackBackgroundColor}
           />
         )}
       </div>
@@ -206,6 +222,7 @@ export const VideoSeekSlider: React.FC<TimeLineProps> = ({
           getPreviewScreenUrl={getPreviewScreenUrl}
           minutesPrefix={minutesPrefix}
           secondsPrefix={secondsPrefix}
+          isLive={isLive}
         />
       )}
 
@@ -213,7 +230,7 @@ export const VideoSeekSlider: React.FC<TimeLineProps> = ({
         max={max}
         currentTime={currentTime}
         isThumbActive={isThumbActive}
-        trackColor={trackColor}
+        trackColor={thumbColor ?? trackColor}
       />
     </div>
   );

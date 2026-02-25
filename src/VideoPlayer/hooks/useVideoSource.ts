@@ -29,48 +29,45 @@ type DashEngineParams = {
   setDashInstance: (instance: dashjs.MediaPlayerClass | null) => void;
   setQualityLevels: (levels: QualityLevel[]) => void;
   setCurrentQuality: (quality: string) => void;
+  isLive?: boolean;
 };
 
-const HLS_CONFIG: any = {
+const getHlsConfig = (isLive: boolean): Record<string, unknown> => ({
   enableWorker: true,
-  lowLatencyMode: false,
-  backBufferLength: 90,
-  liveSyncDurationCount: 3,
+  lowLatencyMode: isLive,
+  backBufferLength: isLive ? 30 : 90,
+  liveSyncDurationCount: isLive ? 1 : 3,
+  liveMaxLatencyDurationCount: isLive ? 3 : 10,
   maxBufferSize: 80 * 1_000_000,
-  maxBufferLength: 30,
+  maxBufferLength: isLive ? 10 : 30,
   manifestLoadingMaxRetry: 4,
   manifestLoadingRetryDelay: 1000,
   levelLoadingMaxRetry: 4,
   levelLoadingRetryDelay: 1000,
   fragLoadingMaxRetry: 6,
-  fragLoadingRetryDelay: 750,
+  fragLoadingRetryDelay: isLive ? 500 : 750,
   startLevel: -1,
-  startPosition: -1,
+  startPosition: isLive ? -1 : -1,
   capLevelToPlayerSize: true,
-};
+});
 
-const DASH_SETTINGS: any = {
+const getDashSettings = (isLive: boolean): Record<string, unknown> => ({
   streaming: {
     abr: {
-      autoSwitchBitrate: {
-        video: true,
-        audio: true,
-      },
+      autoSwitchBitrate: { video: true, audio: true },
       limitBitrateByPortal: true,
       ABRStrategy: "abrThroughput",
       bandwidthSafetyFactor: 0.9,
     },
     buffer: {
       fastSwitchEnabled: true,
-      bufferTimeAtTopQuality: 28,
-      bufferTimeAtTopQualityLongForm: 55,
+      bufferTimeAtTopQuality: isLive ? 12 : 28,
+      bufferTimeAtTopQualityLongForm: isLive ? 20 : 55,
     },
-    lowLatencyEnabled: false,
+    lowLatencyEnabled: isLive,
   },
-  debug: {
-    logLevel: dashjs.Debug.LOG_LEVEL_NONE,
-  },
-};
+  debug: { logLevel: dashjs.Debug.LOG_LEVEL_NONE },
+});
 
 const MAX_HLS_NETWORK_RETRIES = 4;
 const MAX_DASH_RESTARTS = 3;
@@ -109,6 +106,8 @@ const resolveStreamType = (
   return "other";
 };
 
+type HlsEngineParamsWithLive = HlsEngineParams & { isLive?: boolean };
+
 const useHlsEngine = ({
   enabled,
   source,
@@ -116,7 +115,8 @@ const useHlsEngine = ({
   setHlsInstance,
   setQualityLevels,
   setCurrentQuality,
-}: HlsEngineParams) => {
+  isLive = false,
+}: HlsEngineParamsWithLive) => {
   const networkRetryRef = useRef(0);
   const retryTimerRef = useRef<number | undefined>(undefined);
 
@@ -182,7 +182,7 @@ const useHlsEngine = ({
       return;
     }
 
-    const hls = new Hls(HLS_CONFIG);
+    const hls = new Hls(getHlsConfig(isLive) as any);
     setHlsInstance(hls);
 
     const updateQualityLevels = () => {
@@ -309,6 +309,7 @@ const useHlsEngine = ({
     setHlsInstance,
     setQualityLevels,
     setCurrentQuality,
+    isLive,
   ]);
 };
 
@@ -319,6 +320,7 @@ const useDashEngine = ({
   setDashInstance,
   setQualityLevels,
   setCurrentQuality,
+  isLive = false,
 }: DashEngineParams) => {
   const restartCountRef = useRef(0);
   const restartTimerRef = useRef<number | undefined>(undefined);
@@ -352,7 +354,7 @@ const useDashEngine = ({
     };
 
     const applySettings = () => {
-      player.updateSettings(DASH_SETTINGS);
+      player.updateSettings(getDashSettings(isLive) as any);
     };
 
     const updateQualityLevels = () => {
@@ -498,12 +500,14 @@ const useDashEngine = ({
     setDashInstance,
     setQualityLevels,
     setCurrentQuality,
+    isLive,
   ]);
 };
 
 export const useVideoSource = (
   trackSrc: string,
-  type?: "hls" | "dash" | "mp4" | "other" | "youtube" | undefined
+  type?: "hls" | "dash" | "mp4" | "other" | "youtube" | undefined,
+  isLive?: boolean
 ) => {
   const {
     videoRef,
@@ -572,6 +576,7 @@ export const useVideoSource = (
     setHlsInstance,
     setQualityLevels,
     setCurrentQuality,
+    isLive: isLive ?? false,
   });
 
   useDashEngine({
@@ -581,6 +586,7 @@ export const useVideoSource = (
     setDashInstance,
     setQualityLevels,
     setCurrentQuality,
+    isLive: isLive ?? false,
   });
 
   useEffect(() => {

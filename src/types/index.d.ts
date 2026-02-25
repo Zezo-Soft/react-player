@@ -1,6 +1,10 @@
 import { SubtitleTrack } from "../store";
 import { TimeCode } from "../VideoPlayer/components/time-line/TimeLine";
-import { VideoQualityConfig } from "../VideoPlayer/types/VideoPlayerTypes";
+import {
+  VideoQualityConfig,
+  SeekBarConfig,
+  PlayPauseButtonConfig,
+} from "../VideoPlayer/types/VideoPlayerTypes";
 
 export interface IControlsHeaderProps {
   config?: {
@@ -17,6 +21,10 @@ export interface IControlsHeaderProps {
 export interface ISeekBarConfig {
   timeCodes?: TimeCode[];
   trackColor?: string;
+  bufferColor?: string;
+  hoverColor?: string;
+  thumbColor?: string;
+  trackBackgroundColor?: string;
   getPreviewScreenUrl?: (hoverTimeValue: number) => string;
 }
 
@@ -26,12 +34,20 @@ export interface IControlsBottomProps {
   };
 }
 
+export interface IControlsMiddleProps {
+  config?: {
+    playPauseButtonConfig?: PlayPauseButtonConfig;
+  };
+}
+
 export interface IPlayerConfig {
   width?: string;
   height?: string;
   config?: {
+    isLive?: boolean;
     headerConfig?: IControlsHeaderProps;
     bottomConfig?: IControlsBottomProps;
+    middleConfig?: IControlsMiddleProps;
   };
 }
 

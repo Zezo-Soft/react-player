@@ -21,11 +21,27 @@ export interface VideoProps {
   showControls?: boolean;
   isMute?: boolean;
   startFrom?: number;
+  isLive?: boolean;
 }
 
 export interface VideoQualityConfig {
   defaultQuality?: "auto" | string;
   showInSettings?: boolean;
+}
+
+export interface SeekBarConfig {
+  trackColor?: string;
+  bufferColor?: string;
+  hoverColor?: string;
+  thumbColor?: string;
+  trackBackgroundColor?: string;
+}
+
+export interface PlayPauseButtonConfig {
+  backgroundColor?: string;
+  hoverBackgroundColor?: string;
+  borderRadius?: string;
+  padding?: string;
 }
 
 export interface StyleProps {
@@ -34,6 +50,8 @@ export interface StyleProps {
   height?: string;
   subtitleStyle?: SubtitleStyleConfig;
   qualityConfig?: VideoQualityConfig;
+  seekBarConfig?: SeekBarConfig;
+  playPauseButtonConfig?: PlayPauseButtonConfig;
 }
 
 export interface EventProps {

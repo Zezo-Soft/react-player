@@ -21,6 +21,9 @@ export interface TimeCodeItemProps {
   onHover?: (label: string) => void;
   withGap?: boolean;
   trackColor?: string;
+  bufferColor?: string;
+  hoverColor?: string;
+  trackBackgroundColor?: string;
 }
 
 export const TimeCodeItem: React.FC<TimeCodeItemProps> = memo(
@@ -38,6 +41,9 @@ export const TimeCodeItem: React.FC<TimeCodeItemProps> = memo(
     onHover = () => undefined,
     withGap,
     trackColor,
+    bufferColor,
+    hoverColor,
+    trackBackgroundColor,
   }) => {
     const positionPercent = getPositionPercent(maxTime, startTime);
     const timeDiff = endTime - startTime;
@@ -67,32 +73,46 @@ export const TimeCodeItem: React.FC<TimeCodeItemProps> = memo(
 
     const handleMouseMove = (): void => onHover(label);
 
+    const trackBg = trackBackgroundColor ?? "rgba(255, 255, 255, 0.2)";
+    const bufColor = bufferColor ?? "rgba(255, 255, 255, 0.3)";
+    const hovColor = hoverColor ?? "rgba(255, 255, 255, 0.5)";
+    const progColor = trackColor ?? "#ff0000";
+
     return (
       <div
         className={mainClassName}
         onMouseMove={handleMouseMove}
-        style={{
-          width: `${widthPercent}%`,
-          left: `${positionPercent}%`,
-        }}
+        style={
+          {
+            width: `${widthPercent}%`,
+            left: `${positionPercent}%`,
+            "--seek-track-bg": trackBg,
+          } as React.CSSProperties
+        }
       >
         <div
           className="inner-seek-block buffered"
           data-test-id="test-buffered"
-          style={{ transform: `scaleX(${bufferTimeScale})` }}
+          style={{
+            transform: `scaleX(${bufferTimeScale})`,
+            backgroundColor: bufColor,
+          }}
         />
 
         <div
           className="inner-seek-block seek-hover"
           data-test-id="test-seek-hover"
-          style={{ transform: `scaleX(${seekHoverTimeScale})` }}
+          style={{
+            transform: `scaleX(${seekHoverTimeScale})`,
+            backgroundColor: hovColor,
+          }}
         />
 
         <div
           className="inner-seek-block connect"
           style={{
             transform: `scaleX(${currentTimeScale})`,
-            backgroundColor: trackColor || "#ff0000",
+            backgroundColor: progColor,
           }}
         />
       </div>

@@ -6,6 +6,11 @@ import {
   CONTROL_INTERACTION_EVENT,
   SKIP_INTERVAL_SECONDS,
 } from "../../constants";
+import type { PlayPauseButtonConfig } from "../../types/VideoPlayerTypes";
+
+interface MiddleControlsProps {
+  config?: { playPauseButtonConfig?: PlayPauseButtonConfig };
+}
 
 const BackwardIcon = memo(() => (
   <svg
@@ -70,16 +75,19 @@ interface ControlButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const ControlButtonComponent: React.FC<ControlButtonProps> = ({
   onClick,
   icon,
   className,
+  style,
 }) => (
   <button
     onClick={onClick}
-    className={`flex justify-center items-center h-full cursor-pointer ${className}`}
+    className={`flex justify-center items-center h-full cursor-pointer rounded-full transition-colors duration-200 ${className}`}
+    style={style}
   >
     {icon}
   </button>
@@ -88,7 +96,17 @@ const ControlButtonComponent: React.FC<ControlButtonProps> = ({
 const ControlButton = memo(ControlButtonComponent);
 ControlButton.displayName = "ControlButton";
 
-const MiddleControls: React.FC = () => {
+const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
+  const ppConfig = config?.playPauseButtonConfig;
+  const playPauseStyle: React.CSSProperties = React.useMemo(
+    () => ({
+      backgroundColor: ppConfig?.backgroundColor,
+      borderRadius: ppConfig?.borderRadius ?? "50%",
+      padding: ppConfig?.padding,
+    }),
+    [ppConfig?.backgroundColor, ppConfig?.borderRadius, ppConfig?.padding]
+  );
+
   const { videoRef, adVideoRef, isPlaying, setIsPlaying, isAdPlaying } =
     useVideoStore(
       useShallow((state) => ({
@@ -223,6 +241,7 @@ const MiddleControls: React.FC = () => {
         <ControlButton
           onClick={handlePlayPause}
           className="w-[10vw]"
+          style={playPauseStyle}
           icon={
             isBuffering ? (
               <div className="relative">
@@ -250,6 +269,7 @@ const MiddleControls: React.FC = () => {
       <ControlButton
         onClick={handlePlayPause}
         className="w-[10vw]"
+        style={playPauseStyle}
         icon={
           isBuffering ? (
             <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />

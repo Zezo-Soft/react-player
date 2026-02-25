@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, memo } from "react";
 import { secondsToMilliseconds, timeFormat } from "../../utils";
 import { useVideoStore } from "../../../store/VideoState";
 import { VideoSeekSlider } from "../time-line/TimeLine";
+import LiveIndicator from "../../../components/ui/LiveIndicator";
 import "../time-line/time-line.css";
 import { IControlsBottomProps } from "../../../types";
 import { useShallow } from "zustand/react/shallow";
@@ -20,7 +21,12 @@ const formatTimeMemo = (() => {
   };
 })();
 
-const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
+interface BottomControlsProps extends IControlsBottomProps {
+  isLive?: boolean;
+}
+
+const BottomControls: React.FC<BottomControlsProps> = memo(
+  ({ config, isLive = false }) => {
   const { videoRef, currentTime, isFullscreen, bufferedProgress, isAdPlaying } =
     useVideoStore(
       useShallow((state) => ({
@@ -64,10 +70,10 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
     [roundedCurrentTime]
   );
 
-  const seekSliderMax = useMemo(
-    () => secondsToMilliseconds(duration),
-    [duration]
-  );
+  const seekSliderMax = useMemo(() => {
+    if (isLive && !Number.isFinite(duration)) return 1000;
+    return secondsToMilliseconds(duration);
+  }, [duration, isLive]);
   const seekSliderCurrentTime = useMemo(
     () => secondsToMilliseconds(currentTimeValue),
     [currentTimeValue]
@@ -87,22 +93,33 @@ const BottomControls: React.FC<IControlsBottomProps> = memo(({ config }) => {
         getPreviewScreenUrl={config?.seekBarConfig?.getPreviewScreenUrl}
         timeCodes={config?.seekBarConfig?.timeCodes}
         trackColor={config?.seekBarConfig?.trackColor}
+        bufferColor={config?.seekBarConfig?.bufferColor}
+        hoverColor={config?.seekBarConfig?.hoverColor}
+        thumbColor={config?.seekBarConfig?.thumbColor}
+        trackBackgroundColor={config?.seekBarConfig?.trackBackgroundColor}
+        isLive={isLive}
       />
 
       <div
         className={`pt-6 ${
           isFullscreen ? "pb-10" : "pb-16"
-        } lg:pb-12 flex items-center gap-4 text-white`}
+        } lg:pb-12 flex items-center gap-4 text-white flex-wrap`}
       >
-        <span className="text-lg lg:text-2xl font-semibold text-white cursor-pointer hover:text-gray-200 transition-colors duration-200">
-          {currentTimeFormatted}
-        </span>
-        <span className="text-lg lg:text-3xl font-semibold text-gray-500 cursor-pointer hover:text-gray-200 transition-colors duration-200">
-          /
-        </span>
-        <span className="text-lg lg:text-2xl font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors duration-200">
-          {durationFormatted}
-        </span>
+        {isLive ? (
+          <LiveIndicator />
+        ) : (
+          <>
+            <span className="text-lg lg:text-2xl font-semibold text-white cursor-pointer hover:text-gray-200 transition-colors duration-200">
+              {currentTimeFormatted}
+            </span>
+            <span className="text-lg lg:text-3xl font-semibold text-gray-500 cursor-pointer hover:text-gray-200 transition-colors duration-200">
+              /
+            </span>
+            <span className="text-lg lg:text-2xl font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors duration-200">
+              {durationFormatted}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

@@ -35,10 +35,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       showControls = true,
       isMute = false,
       startFrom,
+      isLive: isLiveProp = false,
     } = video;
 
-    const { className, width, height, subtitleStyle, qualityConfig } =
-      style || {};
+    const {
+      className,
+      width,
+      height,
+      subtitleStyle,
+      qualityConfig,
+      seekBarConfig: styleSeekBarConfig,
+      playPauseButtonConfig,
+    } = style || {};
 
     const { onEnded, onError, onClose, onWatchHistoryUpdate } = events || {};
 
@@ -54,12 +62,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       ads,
     } = features || {};
 
-    const { setVideoWrapperRef, setActiveQuality } = useVideoStore(
+    const {
+      setVideoWrapperRef,
+      setActiveQuality,
+      setIsLive,
+    } = useVideoStore(
       useShallow((state) => ({
         setVideoWrapperRef: state.setVideoWrapperRef,
         setActiveQuality: state.setActiveQuality,
+        setIsLive: state.setIsLive,
       }))
     );
+
+    React.useEffect(() => {
+      setIsLive(isLiveProp);
+    }, [isLiveProp, setIsLive]);
 
     React.useEffect(() => {
       if (qualityConfig?.defaultQuality) {
@@ -123,6 +140,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
 
     const overlayConfig = React.useMemo(
       () => ({
+        isLive: isLiveProp,
         headerConfig: {
           config: {
             isTrailer: isTrailer,
@@ -136,10 +154,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
           config: {
             seekBarConfig: {
               timeCodes: timeCodes,
-              trackColor: "red",
+              trackColor: styleSeekBarConfig?.trackColor ?? "#ff0000",
+              bufferColor: styleSeekBarConfig?.bufferColor,
+              hoverColor: styleSeekBarConfig?.hoverColor,
+              thumbColor: styleSeekBarConfig?.thumbColor,
+              trackBackgroundColor: styleSeekBarConfig?.trackBackgroundColor,
               getPreviewScreenUrl,
             },
           },
+        },
+        middleConfig: {
+          config: { playPauseButtonConfig },
         },
       }),
       [
@@ -150,6 +175,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
         timeCodes,
         getPreviewScreenUrl,
         qualityConfig,
+        styleSeekBarConfig,
+        playPauseButtonConfig,
       ]
     );
 
@@ -177,7 +204,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       [isTrailer, trackTitle, handleClose, timeCodes, getPreviewScreenUrl]
     );
 
-    useVideoSource(trackSrc, type);
+    useVideoSource(trackSrc, type, isLiveProp);
     useSubtitles(subtitles);
     useSubtitleStyling(subtitleStyle);
     useVideoTracking(tracking, episodeList, currentEpisodeIndex, handleClose);

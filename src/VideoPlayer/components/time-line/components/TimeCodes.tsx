@@ -15,6 +15,9 @@ export interface TimeCodesProps {
   label: string;
   setLabel: React.Dispatch<React.SetStateAction<string>>;
   trackColor?: string;
+  bufferColor?: string;
+  hoverColor?: string;
+  trackBackgroundColor?: string;
 }
 
 export const TimeCodes: React.FC<TimeCodesProps> = ({
@@ -28,6 +31,9 @@ export const TimeCodes: React.FC<TimeCodesProps> = ({
   label,
   setLabel,
   trackColor,
+  bufferColor,
+  hoverColor,
+  trackBackgroundColor,
 }) => {
   const hoverTimeValue = positionToMs(max, seekHoverPosition, trackWidth);
 
@@ -90,6 +96,9 @@ export const TimeCodes: React.FC<TimeCodesProps> = ({
             onHover={handleLabelChange}
             withGap={true}
             trackColor={trackColor}
+            bufferColor={bufferColor}
+            hoverColor={hoverColor}
+            trackBackgroundColor={trackBackgroundColor}
           />
         );
       })}
