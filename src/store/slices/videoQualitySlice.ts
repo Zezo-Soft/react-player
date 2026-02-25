@@ -27,4 +27,6 @@ export const createVideoQualitySlice: StateCreator<
   setCurrentQuality: (currentQuality) => set({ currentQuality }),
   streamType: "mp4",
   setStreamType: (streamType) => set({ streamType }),
+  isLive: false,
+  setIsLive: (isLive) => set({ isLive }),
 });

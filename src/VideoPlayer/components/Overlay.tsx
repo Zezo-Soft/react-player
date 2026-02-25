@@ -11,6 +11,7 @@ import {
 } from "../constants";
 
 const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
+  const isLive = config?.isLive ?? false;
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -152,7 +153,9 @@ const Overlay: React.FC<IPlayerConfig> = React.memo(({ config }) => {
       className="absolute inset-0"
       onMouseMove={handleMouseEnter}
     >
-      {controls && !isAdPlaying && <VideoPlayerControls config={config} />}
+      {controls && !isAdPlaying && (
+        <VideoPlayerControls config={config} isLive={isLive} />
+      )}
 
       {shouldShowCountdown && (
         <VideoActionButton

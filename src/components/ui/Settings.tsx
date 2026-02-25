@@ -131,7 +131,7 @@ const Settings: React.FC<SettingsProps> = ({
   return (
     <Tooltip title="Settings">
       <Popover button={<SettingsIcon className={iconClassName} />} align="center">
-        <div className="bg-[#3a4049] text-white rounded-[7px] w-80 overflow-hidden">
+        <div className="bg-[#3a4049] text-white rounded-[7px] w-80 max-w-[min(90vw,320px)] overflow-hidden">
           {activeMenu === "main" && (
             <div className="p-4">
               <h3 className="text-white font-bold text-xl mb-4">Settings</h3>
@@ -232,18 +232,18 @@ const Settings: React.FC<SettingsProps> = ({
           )}
 
           {activeMenu === "quality" && (
-            <div className="p-4">
-              <div className="flex items-center gap-3 mb-4">
+            <div className="p-4 flex flex-col max-h-[min(80vh,480px)]">
+              <div className="flex items-center gap-3 mb-4 shrink-0">
                 <button
                   onClick={handleBack}
-                  className="p-1 rounded-md transition-colors"
+                  className="p-1 rounded-md transition-colors hover:bg-white/10"
                 >
                   <ChevronRight className="w-6 h-6 text-white rotate-180" />
                 </button>
                 <h3 className="text-white font-bold text-xl">Video Quality</h3>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 overflow-y-auto min-h-0 flex-1 pr-1 -mr-1">
                 {hasQualityOptions ? (
                   <>
                     <button

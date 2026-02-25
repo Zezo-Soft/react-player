@@ -74,6 +74,9 @@ export interface VideoQualityState {
 
   streamType: StreamType;
   setStreamType: (streamType: StreamType) => void;
+
+  isLive: boolean;
+  setIsLive: (isLive: boolean) => void;
 }
 
 export interface SubtitleTrack {

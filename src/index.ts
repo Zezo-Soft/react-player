@@ -10,7 +10,11 @@ export type {
   WatchHistoryData,
 } from "./VideoPlayer/types/VideoPlayerTypes";
 export type { SubtitleStyleConfig } from "./VideoPlayer/hooks/useSubtitleStyling";
-export type { VideoQualityConfig } from "./VideoPlayer/types/VideoPlayerTypes";
+export type {
+  VideoQualityConfig,
+  SeekBarConfig,
+  PlayPauseButtonConfig,
+} from "./VideoPlayer/types/VideoPlayerTypes";
 export type {
   VideoState,
   VideoRefsState,
