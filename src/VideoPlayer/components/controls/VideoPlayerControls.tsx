@@ -13,8 +13,8 @@ const VideoPlayerControls: React.FC<VideoPlayerControlsProps> = ({
   isLive = false,
 }) => {
   return (
-    <div className="px-20">
-      <div className="absolute top-0 left-0 h-full w-full bg-[rgba(0,0,0,0.5)] flex flex-col justify-between">
+    <div className="absolute inset-0">
+      <div className="absolute inset-0 bg-[rgba(0,0,0,0.5)] flex flex-col justify-between">
         <ControlsHeader config={config?.headerConfig?.config} />
         <MiddleControls config={config?.middleConfig?.config} />
         <BottomControls
