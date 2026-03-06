@@ -2,7 +2,6 @@ import * as React from "react";
 import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { IoMdClose } from "react-icons/io";
 import FullScreenToggle from "../../../components/ui/FullScreenToggle";
-import PiPictureInPictureToggle from "../../../components/ui/PiPictureInPictureToggle";
 import Settings from "../../../components/ui/Settings";
 import { useVideoStore } from "../../../store/VideoState";
 import { IControlsHeaderProps } from "../../../types";
@@ -77,11 +76,10 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     return formatTime(remaining);
   }, [adDuration, adCurrentTime, formatTime]);
 
-  const [isPipActive, setIsPipActive] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   const handleFullscreen = () => {
-    if (!screenfull.isEnabled || isPipActive) return;
+    if (!screenfull.isEnabled) return;
 
     if (screenfull.isFullscreen) {
       screenfull.exit();
@@ -117,30 +115,6 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     setMuted(nextMuted);
   };
 
-  const handlePipToggle = async () => {
-    if (!videoRef) return;
-    try {
-      if (!document.pictureInPictureElement && !isPipActive) {
-        await videoRef.requestPictureInPicture();
-        setIsPipActive(true);
-      } else if (document.pictureInPictureElement && isPipActive) {
-        await document.exitPictureInPicture();
-        setIsPipActive(false);
-      }
-    } catch {}
-  };
-
-  React.useEffect(() => {
-    const handlePipChange = () =>
-      setIsPipActive(!!document.pictureInPictureElement);
-    document.addEventListener("enterpictureinpicture", handlePipChange);
-    document.addEventListener("leavepictureinpicture", handlePipChange);
-    return () => {
-      document.removeEventListener("enterpictureinpicture", handlePipChange);
-      document.removeEventListener("leavepictureinpicture", handlePipChange);
-    };
-  }, []);
-
   const handleClose = () => {
     resetStore();
     config?.onClose?.();
@@ -162,7 +136,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const renderVideoHeader = () => (
     <div className="flex">
       <div>
-        <h1 className="text-gray-200 text-lg lg:text-2xl font-semibold">
+        <h1 className="text-gray-200 text-lg lg:text-2xl font-medium">
           {episodeList.length > 0
             ? episodeList[currentEpisodeIndex]?.title
             : config?.title}
@@ -201,38 +175,16 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
         </div>
 
         <Tooltip
-          title={
-            isPipActive
-              ? "Disabled in PiP"
-              : isFullscreen
-              ? "Exit Fullscreen"
-              : "Fullscreen"
-          }
-          className={`${iconClassName} ${
-            isPipActive ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          className={iconClassName}
         >
-          <div
-            onClick={handleFullscreen}
-            className={isPipActive ? "pointer-events-none" : ""}
-          >
+          <div onClick={handleFullscreen}>
             <FullScreenToggle
               isFullScreen={isFullscreen}
               className={iconClassName}
             />
           </div>
         </Tooltip>
-
-        {!isAdPlaying && (
-          <Tooltip
-            className="whitespace-nowrap"
-            title={isPipActive ? "Exit PiP" : "Enter PiP"}
-          >
-            <div onClick={handlePipToggle}>
-              <PiPictureInPictureToggle className={iconClassName} />
-            </div>
-          </Tooltip>
-        )}
 
         {config?.onClose && (
           <>

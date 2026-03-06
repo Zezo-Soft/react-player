@@ -36,28 +36,6 @@
   }
 }
 
-.pip-toggle {
-  cursor: pointer;
-  color: #9ca3af;
-  transition: color 0.2s ease-in-out;
-}
-
-.pip-toggle:hover {
-  color: #e5e7eb;
-}
-
-.pip-icon {
-  width: 15px;
-  height: 15px;
-}
-
-@media (min-width: 1024px) {
-  .pip-icon {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 /* Ad Badge Header - Dark/Black Background */
 .ad-badge-header {
   background: rgba(45, 47, 49, 0.95);

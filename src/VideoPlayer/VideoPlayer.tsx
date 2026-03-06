@@ -257,7 +257,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       >
         {trackPoster && (
           <div
-            className="pip-poster absolute inset-0 bg-center bg-cover hidden"
+            className="poster-bg absolute inset-0 bg-center bg-cover hidden"
             style={{ backgroundImage: `url(${trackPoster})` }}
           />
         )}
