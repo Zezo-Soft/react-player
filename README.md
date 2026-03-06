@@ -1,19 +1,19 @@
-# @zezosoft/react-player
+# @zezosoft/react-player 🎬
 
 A React video player by Zezosoft supporting HLS, MP4, DASH, preview thumbnails, tracking, subtitles, episode playback, and ads.
 
-## Features
+## ✨ Features
 
-- **Formats** — HLS, MP4, DASH (via hls.js and dash.js)
-- **Preview thumbnails** — Hover over seek bar for scrubbing previews
-- **Event tracking** — Views, watch time, user interactions
-- **Subtitles** — WebVTT with customizable styling
-- **Intro skip** — Skip intro button with configurable time range
-- **Episodes** — Next episode auto-play and playlist
-- **Ads** — Pre-roll, mid-roll, post-roll video ads
-- **Watch history** — Resume playback, progress tracking
+- ✅ **Formats** — HLS, MP4, DASH (via hls.js and dash.js)
+- 🖼️ **Preview thumbnails** — Hover over seek bar for scrubbing previews
+- 📊 **Event tracking** — Views, watch time, user interactions
+- 💬 **Subtitles** — WebVTT with customizable styling
+- ⏭️ **Intro skip** — Skip intro button with configurable time range
+- 📺 **Episodes** — Next episode auto-play and playlist
+- 📢 **Ads** — Pre-roll, mid-roll, post-roll video ads
+- 📚 **Watch history** — Resume playback, progress tracking
 
-## Installation
+## 📦 Installation
 
 ```sh
 npm install @zezosoft/react-player
@@ -25,7 +25,7 @@ yarn add @zezosoft/react-player
 
 **Peer dependencies:** `react`, `react-dom`, `hls.js`, `lucide-react`, `zustand`
 
-## Quick Start
+## 🚀 Quick Start
 
 ```tsx
 import { VideoPlayer } from "@zezosoft/react-player";
@@ -46,7 +46,7 @@ function App() {
 }
 ```
 
-## Props
+## 📖 Props
 
 The player accepts four props: `video` (required), `style`, `events`, and `features`.
 
@@ -129,9 +129,9 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 }
 ```
 
-## Examples
+## 📋 Examples
 
-### HLS with poster
+### 📺 HLS with poster
 
 ```tsx
 <VideoPlayer
@@ -145,7 +145,7 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 />
 ```
 
-### Preview thumbnails
+### 🖼️ Preview thumbnails
 
 ```tsx
 <VideoPlayer
@@ -157,7 +157,7 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 />
 ```
 
-### Chapters
+### 📑 Chapters
 
 ```tsx
 <VideoPlayer
@@ -172,7 +172,7 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 />
 ```
 
-### Subtitles
+### 💬 Subtitles
 
 ```tsx
 <VideoPlayer
@@ -194,7 +194,7 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 />
 ```
 
-### Intro skip
+### ⏭️ Intro skip
 
 ```tsx
 <VideoPlayer
@@ -205,7 +205,7 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 />
 ```
 
-### Episodes
+### 📺 Episodes
 
 ```tsx
 const episodes = [
@@ -226,7 +226,7 @@ const episodes = [
 />
 ```
 
-### Ads
+### 📢 Ads
 
 ```tsx
 <VideoPlayer
@@ -257,7 +257,7 @@ const episodes = [
 />
 ```
 
-### Resume playback
+### ▶️ Resume playback
 
 ```tsx
 const [savedTime, setSavedTime] = useState(0);
@@ -276,7 +276,7 @@ const [savedTime, setSavedTime] = useState(0);
 />
 ```
 
-## Exports
+## 📤 Exports
 
 ```ts
 import {
@@ -298,7 +298,7 @@ import type {
 } from "@zezosoft/react-player";
 ```
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 **Video not playing**
 - Use a valid, accessible URL
@@ -313,10 +313,10 @@ import type {
 - `getPreviewScreenUrl` must return a valid image URL
 - URL is called with `hoverTimeValue` in milliseconds
 
-## License
+## 📄 License
 
 MIT · [Zezosoft](https://zezosoft.com)
 
-## Credits
+## 🙌 Credits
 
 Seek bar inspired by [react-video-seek-slider](https://www.npmjs.com/package/react-video-seek-slider).
