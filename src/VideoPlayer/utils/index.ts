@@ -26,6 +26,18 @@ export const secondsToMilliseconds = (seconds: number) => {
   return seconds * 1000;
 };
 
+export const getSeekableLiveEdge = (
+  video: HTMLVideoElement
+): number | null => {
+  try {
+    if (!video.seekable || video.seekable.length === 0) return null;
+    const end = video.seekable.end(video.seekable.length - 1);
+    return Number.isFinite(end) && end > 0 ? end : null;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * @description
  * @param url

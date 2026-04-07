@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Check, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import Popover from "./Popover";
-import Tooltip from "./Tooltip";
 import { useVideoStore } from "../../store/VideoState";
 import { QualityManager } from "../../VideoPlayer/utils";
 import type { VideoQualityConfig } from "../../VideoPlayer/types/VideoPlayerTypes";
@@ -44,6 +43,11 @@ const Settings: React.FC<SettingsProps> = ({
   const [activeMenu, setActiveMenu] = React.useState<
     "main" | "quality" | "subtitles" | "speed"
   >("main");
+  const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!settingsMenuOpen) setActiveMenu("main");
+  }, [settingsMenuOpen]);
 
   React.useEffect(() => {
     if (videoRef) {
@@ -129,8 +133,13 @@ const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <Tooltip title="Settings">
-      <Popover button={<SettingsIcon className={iconClassName} />} align="center">
+    <div className="inline-flex w-max max-w-full shrink-0">
+      <Popover
+        button={<SettingsIcon className={iconClassName} />}
+        align="center"
+        onOpenChange={setSettingsMenuOpen}
+        triggerAriaLabel="Settings"
+      >
         <div className="bg-[#3a4049] text-white rounded-[7px] w-80 max-w-[min(90vw,320px)] overflow-hidden">
           {activeMenu === "main" && (
             <div className="p-4">
@@ -139,7 +148,7 @@ const Settings: React.FC<SettingsProps> = ({
 
               <div className="space-y-0 border-t border-gray-600">
                 {showQualityInSettings && (
-                  <button
+                  <button type="button"
                     onClick={() => setActiveMenu("quality")}
                     className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
                   >
@@ -170,7 +179,7 @@ const Settings: React.FC<SettingsProps> = ({
                   </button>
                 )}
 
-                <button
+                <button type="button"
                   onClick={() => setActiveMenu("subtitles")}
                   className="w-full flex items-center justify-between py-4 border-b border-gray-600 rounded-[5px] transition-colors"
                 >
@@ -200,7 +209,7 @@ const Settings: React.FC<SettingsProps> = ({
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </button>
 
-                <button
+                <button type="button"
                   onClick={() => setActiveMenu("speed")}
                   className="w-full flex items-center justify-between py-4 rounded-[5px] transition-colors"
                 >
@@ -234,7 +243,7 @@ const Settings: React.FC<SettingsProps> = ({
           {activeMenu === "quality" && (
             <div className="p-4 flex flex-col max-h-[min(80vh,480px)]">
               <div className="flex items-center gap-3 mb-4 shrink-0">
-                <button
+                <button type="button"
                   onClick={handleBack}
                   className="p-1 rounded-md transition-colors hover:bg-white/10"
                 >
@@ -246,7 +255,7 @@ const Settings: React.FC<SettingsProps> = ({
               <div className="space-y-3 overflow-y-auto min-h-0 flex-1 pr-1 -mr-1">
                 {hasQualityOptions ? (
                   <>
-                    <button
+                    <button type="button"
                       onClick={() =>
                         QualityManager.setQuality(streamType, "auto")
                       }
@@ -272,7 +281,7 @@ const Settings: React.FC<SettingsProps> = ({
                     </button>
 
                     {qualityOptions.map((level) => (
-                      <button
+                      <button type="button"
                         key={level.value}
                         onClick={() =>
                           QualityManager.setQuality(streamType, level.value)
@@ -300,7 +309,7 @@ const Settings: React.FC<SettingsProps> = ({
                     ))}
                   </>
                 ) : (
-                  <button
+                  <button type="button"
                     className="w-full text-left px-4 py-3 rounded-md bg-white/10 cursor-default"
                   >
                     <div className="flex items-start justify-between">
@@ -318,7 +327,7 @@ const Settings: React.FC<SettingsProps> = ({
           {activeMenu === "subtitles" && (
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <button
+                <button type="button"
                   onClick={handleBack}
                   className="p-1 hover:bg-white/10 rounded-md transition-colors"
                 >
@@ -328,7 +337,7 @@ const Settings: React.FC<SettingsProps> = ({
               </div>
 
               <div className="space-y-3">
-                <button
+                <button type="button"
                   onClick={() => setActiveSubtitle(null)}
                   className={`w-full text-left px-4 py-3 rounded-[5px] transition-all flex items-center justify-between ${
                     !activeSubtitle ? "bg-[#454545]" : ""
@@ -341,7 +350,7 @@ const Settings: React.FC<SettingsProps> = ({
                 </button>
 
                 {subtitles?.map((subtitle, index) => (
-                  <button
+                  <button type="button"
                     key={index}
                     onClick={() => setActiveSubtitle(subtitle)}
                     className={`w-full text-left px-4 py-3 rounded-md transition-all flex items-center justify-between ${
@@ -365,7 +374,7 @@ const Settings: React.FC<SettingsProps> = ({
           {activeMenu === "speed" && (
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <button
+                <button type="button"
                   onClick={handleBack}
                   className="p-1 hover:bg-white/10 rounded-md transition-colors"
                 >
@@ -378,7 +387,7 @@ const Settings: React.FC<SettingsProps> = ({
 
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {speedOptions.map((s) => (
-                  <button
+                  <button type="button"
                     key={s}
                     onClick={() => handleSpeedChange(s)}
                     className={`w-full text-left px-4 py-3 rounded-[5px] transition-all flex items-center justify-between ${
@@ -398,7 +407,7 @@ const Settings: React.FC<SettingsProps> = ({
           )}
         </div>
       </Popover>
-    </Tooltip>
+    </div>
   );
 };
 
