@@ -7,7 +7,6 @@ import { useVideoStore } from "../../../store/VideoState";
 import { IControlsHeaderProps } from "../../../types";
 import "../styles/video-controls.css";
 import screenfull from "screenfull";
-import Tooltip from "../../../components/ui/Tooltip";
 import { useShallow } from "zustand/react/shallow";
 
 const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
@@ -162,37 +161,41 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
           />
         )}
 
-        <div onClick={handleMute}>
+        <div
+          onClick={handleMute}
+          role="button"
+          tabIndex={0}
+          aria-label={muted ? "Unmute" : "Mute"}
+        >
           {muted ? (
-            <Tooltip title="Unmute">
-              <IoVolumeMuteOutline className={iconClassName} />
-            </Tooltip>
+            <IoVolumeMuteOutline className={iconClassName} />
           ) : (
-            <Tooltip title="Mute">
-              <IoVolumeHighOutline className={iconClassName} />
-            </Tooltip>
+            <IoVolumeHighOutline className={iconClassName} />
           )}
         </div>
 
-        <Tooltip
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-          className={iconClassName}
+        <div
+          onClick={handleFullscreen}
+          role="button"
+          tabIndex={0}
+          aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
         >
-          <div onClick={handleFullscreen}>
-            <FullScreenToggle
-              isFullScreen={isFullscreen}
-              className={iconClassName}
-            />
-          </div>
-        </Tooltip>
+          <FullScreenToggle
+            isFullScreen={isFullscreen}
+            className={iconClassName}
+          />
+        </div>
 
         {config?.onClose && (
           <>
             <div className="w-[2px] h-10 bg-gray-500 hover:bg-gray-300 mx-2" />
-            <div onClick={handleClose}>
-              <Tooltip title="Close">
-                <IoMdClose className={iconClassName} />
-              </Tooltip>
+            <div
+              onClick={handleClose}
+              role="button"
+              tabIndex={0}
+              aria-label="Close"
+            >
+              <IoMdClose className={iconClassName} />
             </div>
           </>
         )}
