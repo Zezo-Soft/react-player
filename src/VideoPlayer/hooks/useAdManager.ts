@@ -12,6 +12,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
     duration,
     isAdPlaying,
     setIsAdPlaying,
+    setAdProvider,
     currentAd,
     setCurrentAd,
     adType,
@@ -34,6 +35,9 @@ export const useAdManager = (adConfig?: AdConfig) => {
       duration: state.duration,
       isAdPlaying: state.isAdPlaying,
       setIsAdPlaying: state.setIsAdPlaying,
+      setAdProvider: state.setAdProvider,
+      adProvider: state.adProvider,
+      imaPlayback: state.imaPlayback,
       currentAd: state.currentAd,
       setCurrentAd: state.setCurrentAd,
       adType: state.adType,
@@ -126,6 +130,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
     setIsPlaying(false);
 
     setIsAdPlaying(true);
+    setAdProvider("custom");
     setCurrentAd(adBreak);
     setAdType("pre-roll");
 
@@ -156,6 +161,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
       stopMediaElement(useVideoStore.getState().adVideoRef);
 
       setIsAdPlaying(true);
+      setAdProvider("custom");
       setCurrentAd(adBreak);
       setAdType("mid-roll");
 
@@ -193,6 +199,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
     stopMediaElement(useVideoStore.getState().adVideoRef);
 
     setIsAdPlaying(true);
+    setAdProvider("custom");
     setCurrentAd(adBreak);
     setAdType("post-roll");
 
@@ -218,6 +225,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
     // Reset ad state
     setIsAdPlaying(false);
+    setAdProvider(null);
     setCurrentAd(null);
     setAdType(null);
     setAdCurrentTime(0);
@@ -249,6 +257,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
   }, [
     adConfig,
     setIsAdPlaying,
+    setAdProvider,
     setCurrentAd,
     setAdType,
     setAdCurrentTime,
@@ -261,6 +270,16 @@ export const useAdManager = (adConfig?: AdConfig) => {
   ]);
 
   const skipAd = () => {
+    const state = useVideoStore.getState();
+    if (state.adProvider === "ima") {
+      const managerReady = Boolean(state.imaPlayback);
+      const canSkipNow = state.imaPlayback?.isSkippable() ?? false;
+      if (managerReady && canSkipNow) {
+        state.imaPlayback?.skip();
+      }
+      return;
+    }
+
     if (!currentAd || !currentAd.skipable) return;
 
     adConfig?.onAdSkip?.(currentAd);
@@ -316,6 +335,10 @@ export const useAdManager = (adConfig?: AdConfig) => {
 
   useEffect(() => {
     if (!videoRef || !adConfig?.preRoll || preRollPlayedRef.current) return;
+
+    const imaPreRollEnabled =
+      Boolean(adConfig?.ima?.adTagUrl) && adConfig.ima?.preRoll !== false;
+    if (imaPreRollEnabled) return;
 
     const handleCanPlay = () => {
       playPreRollAd();
@@ -433,6 +456,10 @@ export const useAdManager = (adConfig?: AdConfig) => {
   useEffect(() => {
     if (!videoRef || !adConfig?.postRoll || postRollPlayedRef.current) return;
 
+    const imaPostRollEnabled =
+      Boolean(adConfig?.ima?.adTagUrl) && adConfig.ima?.postRoll !== false;
+    if (imaPostRollEnabled) return;
+
     const handleVideoEnded = () => {
       setTimeout(() => {
         playPostRollAd();
@@ -463,6 +490,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
     }
 
     setIsAdPlaying(false);
+    setAdProvider(null);
     setCurrentAd(null);
     setAdType(null);
 
@@ -506,6 +534,7 @@ export const useAdManager = (adConfig?: AdConfig) => {
     videoRef?.src,
     adConfig?.midRoll,
     setIsAdPlaying,
+    setAdProvider,
     setCurrentAd,
     setAdType,
     setMidRollQueue,

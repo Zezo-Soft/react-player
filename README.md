@@ -10,7 +10,7 @@ A React video player by Zezosoft supporting HLS, MP4, DASH, preview thumbnails, 
 - 💬 **Subtitles** — WebVTT with customizable styling
 - ⏭️ **Intro skip** — Skip intro button with configurable time range
 - 📺 **Episodes** — Next episode auto-play and playlist
-- 📢 **Ads** — Pre-roll, mid-roll, post-roll video ads
+- 📢 **Ads** — Pre-roll, mid-roll, post-roll (custom MP4 + Google IMA)
 - 📚 **Watch history** — Resume playback, progress tracking
 
 ## 📦 Installation
@@ -105,8 +105,16 @@ The player accepts four props: `video` (required), `style`, `events`, and `featu
 
 ### Ads (`AdConfig`)
 
+Custom MP4 ads and **Google IMA** (VAST/VMAP) can be used together. See **[docs/IMA_INTEGRATION.md](./docs/IMA_INTEGRATION.md)** for IMA setup, sample tags, and hybrid usage.
+
 ```typescript
 {
+  ima?: {
+    adTagUrl: string;
+    preRoll?: boolean;
+    postRoll?: boolean;
+    midRollCuePoints?: number[];
+  };
   preRoll?: AdBreak;
   midRoll?: AdBreak[];
   postRoll?: AdBreak;

@@ -15,10 +15,12 @@ import {
   useEpisodes,
   useVideoEvents,
   useAdManager,
+  useImaAds,
   usePrimaryVideoLifecycle,
   useVideoError,
 } from "./hooks";
 import AdOverlay from "./components/AdOverlay";
+import ImaAdOverlay from "./components/ImaAdOverlay";
 import ErrorOverlay from "./components/ErrorOverlay";
 import "../index.css";
 import "./styles/subtitles.css";
@@ -66,11 +68,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       setVideoWrapperRef,
       setActiveQuality,
       setIsLive,
+      setImaAdContainerRef,
+      adProvider,
     } = useVideoStore(
       useShallow((state) => ({
         setVideoWrapperRef: state.setVideoWrapperRef,
         setActiveQuality: state.setActiveQuality,
         setIsLive: state.setIsLive,
+        setImaAdContainerRef: state.setImaAdContainerRef,
+        adProvider: state.adProvider,
       }))
     );
 
@@ -88,10 +94,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       () => (isTrailer ? undefined : ads),
       [ads, isTrailer]
     );
-    const hasPreRoll = React.useMemo(
-      () => Boolean(effectiveAds?.preRoll),
-      [effectiveAds?.preRoll]
+    const hasImaPreRoll = React.useMemo(
+      () =>
+        Boolean(effectiveAds?.ima?.adTagUrl) &&
+        effectiveAds?.ima?.preRoll !== false,
+      [effectiveAds?.ima]
     );
+    const hasPreRoll = React.useMemo(() => {
+      const hasCustomPreRoll = Boolean(effectiveAds?.preRoll?.adUrl);
+      return hasCustomPreRoll || hasImaPreRoll;
+    }, [effectiveAds?.preRoll, hasImaPreRoll]);
     const {
       registerVideoRef,
       videoRef,
@@ -102,6 +114,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       shouldShowPlaceholder,
     } = usePrimaryVideoLifecycle({
       hasPreRoll,
+      hasImaPreRoll,
       trackSrc,
     });
 
@@ -221,6 +234,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
     } = useVideoEvents();
 
     const { skipAd } = useAdManager(effectiveAds);
+    const { startImaPreRoll, hasImaPreRoll: imaPreRollActive } =
+      useImaAds(effectiveAds);
     const { error, handleVideoError, retry } = useVideoError();
 
     const hasResumedRef = React.useRef(false);
@@ -292,11 +307,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             shouldCoverMainVideo ? "opacity-0" : "opacity-100"
           } transition-opacity duration-200 ease-out`}
         />
+        {effectiveAds?.ima?.adTagUrl && (
+          <div
+            ref={setImaAdContainerRef}
+            className={`ima-ad-slot absolute inset-0 ${
+              isAdPlaying && adProvider === "ima"
+                ? "z-[46]"
+                : "z-0 pointer-events-none"
+            }`}
+            aria-hidden={!(isAdPlaying && adProvider === "ima")}
+          />
+        )}
         {shouldShowPlaceholder && (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
-            <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white" />
+          <div
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/90 backdrop-blur-sm cursor-pointer"
+            role="button"
+            tabIndex={0}
+            aria-label={
+              imaPreRollActive
+                ? "Start advertisement playback"
+                : "Loading video"
+            }
+            onClick={imaPreRollActive ? startImaPreRoll : undefined}
+            onKeyDown={(e) => {
+              if (
+                imaPreRollActive &&
+                (e.key === "Enter" || e.key === " ")
+              ) {
+                e.preventDefault();
+                startImaPreRoll();
+              }
+            }}
+          >
+            <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white pointer-events-none" />
+            {imaPreRollActive && (
+              <p className="text-white/90 text-sm font-medium pointer-events-none px-6 text-center">
+                Tap to start ads
+              </p>
+            )}
           </div>
-        )} 
+        )}
         {showControls && initialAdFinished && (
           <Overlay config={overlayConfig} />
         )}
@@ -308,7 +358,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             position="left"
           />
         )}
-        {isAdPlaying && currentAd && (
+        {isAdPlaying && currentAd && adProvider === "ima" && (
+          <ImaAdOverlay adBreak={currentAd} config={adOverlayConfig} />
+        )}
+        {isAdPlaying && currentAd && adProvider !== "ima" && (
           <AdOverlay
             adBreak={currentAd}
             onSkip={skipAd}

@@ -143,6 +143,12 @@ export const useVideoEvents = () => {
 
   const onPlay = () => {
     const state = useVideoStore.getState();
+    if (state.adProvider === "ima") {
+      if (!state.isPlaying) {
+        setIsPlaying(true);
+      }
+      return;
+    }
     if (state.adVideoRef) {
       // Defensive guard: ensure any ad media tears down before the primary stream resumes so stray audio cannot continue.
       stopMediaElement(state.adVideoRef);

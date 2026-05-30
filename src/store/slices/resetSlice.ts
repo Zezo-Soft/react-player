@@ -20,7 +20,10 @@ export const createResetSlice: StateCreator<
       media.load();
     };
 
-    const { videoRef, adVideoRef, hlsInstance, dashInstance } = get();
+    const { videoRef, adVideoRef, hlsInstance, dashInstance, imaDestroy } =
+      get();
+
+    imaDestroy?.();
 
     safeStopMediaElement(videoRef);
     safeStopMediaElement(adVideoRef);
@@ -59,6 +62,7 @@ export const createResetSlice: StateCreator<
       autoPlayNext: false,
       showIntroSkip: false,
       isAdPlaying: false,
+      adProvider: null,
       currentAd: null,
       adType: null,
       adCurrentTime: 0,
@@ -67,6 +71,11 @@ export const createResetSlice: StateCreator<
       playedAdBreaks: [],
       midRollQueue: [],
       adVideoRef: null,
+      imaAdContainerRef: null,
+      imaPlayback: null,
+      imaDestroy: null,
+      imaSkipEnabled: false,
+      imaPreRollGateComplete: false,
     });
   },
 });

@@ -6,5 +6,6 @@ export { useIntroSkip } from "./useIntroSkip";
 export { useEpisodes } from "./useEpisodes";
 export { useVideoEvents } from "./useVideoEvents";
 export { useAdManager } from "./useAdManager";
+export { useImaAds } from "./useImaAds";
 export { usePrimaryVideoLifecycle } from "./usePrimaryVideoLifecycle";
 export { useVideoError } from "./useVideoError";

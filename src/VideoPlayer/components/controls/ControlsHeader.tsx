@@ -20,6 +20,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     currentEpisodeIndex,
     resetStore,
     isAdPlaying,
+    adProvider,
+    imaPlayback,
     muted,
     setMuted,
     adCurrentTime,
@@ -32,6 +34,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       currentEpisodeIndex: state.currentEpisodeIndex,
       resetStore: state.resetStore,
       isAdPlaying: state.isAdPlaying,
+      adProvider: state.adProvider,
+      imaPlayback: state.imaPlayback,
       muted: state.muted,
       setMuted: state.setMuted,
       adCurrentTime: state.adCurrentTime,
@@ -99,6 +103,17 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   }, []);
 
   const handleMute = () => {
+    if (isAdPlaying && adProvider === "ima" && imaPlayback) {
+      const currentVolume = imaPlayback.getVolume();
+      const nextMuted = currentVolume > 0;
+      imaPlayback.setVolume(nextMuted ? 0 : 1);
+      if (videoRef) {
+        videoRef.muted = nextMuted;
+      }
+      setMuted(nextMuted);
+      return;
+    }
+
     const targetElement = isAdPlaying ? adVideoRef ?? videoRef : videoRef;
     if (!targetElement) return;
 

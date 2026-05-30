@@ -1,6 +1,11 @@
 import Hls from "hls.js";
 import * as dashjs from "dashjs";
-import { AdBreak, AdType } from "../../VideoPlayer/types/AdTypes";
+import {
+  AdBreak,
+  AdProvider,
+  AdType,
+  ImaPlaybackApi,
+} from "../../VideoPlayer/types/AdTypes";
 
 export type StreamType = "hls" | "dash" | "mp4" | "other";
 
@@ -135,6 +140,8 @@ export interface VideoErrorState {
 export interface AdsState {
   isAdPlaying: boolean;
   setIsAdPlaying: (isAdPlaying: boolean) => void;
+  adProvider: AdProvider | null;
+  setAdProvider: (provider: AdProvider | null) => void;
   currentAd: AdBreak | null;
   setCurrentAd: (ad: AdBreak | null) => void;
   adType: AdType | null;
@@ -151,6 +158,16 @@ export interface AdsState {
   setMidRollQueue: (queue: AdBreak[]) => void;
   adVideoRef: HTMLVideoElement | null;
   setAdVideoRef: (ref: HTMLVideoElement | null) => void;
+  imaAdContainerRef: HTMLDivElement | null;
+  setImaAdContainerRef: (ref: HTMLDivElement | null) => void;
+  imaPlayback: ImaPlaybackApi | null;
+  setImaPlayback: (api: ImaPlaybackApi | null) => void;
+  imaDestroy: (() => void) | null;
+  setImaDestroy: (fn: (() => void) | null) => void;
+  imaSkipEnabled: boolean;
+  setImaSkipEnabled: (enabled: boolean) => void;
+  imaPreRollGateComplete: boolean;
+  setImaPreRollGateComplete: (complete: boolean) => void;
 }
 
 export interface VideoState

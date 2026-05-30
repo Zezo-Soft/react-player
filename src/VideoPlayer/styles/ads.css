@@ -24,3 +24,11 @@
     animation: none;
   }
 }
+
+/* Hide IMA playback chrome only — skip UI stays in DOM for programmatic activation */
+.video-player .ima-controls-div,
+.video-player .ima-countdown-div {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
