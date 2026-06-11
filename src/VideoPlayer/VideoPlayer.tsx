@@ -159,7 +159,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             isTrailer: isTrailer,
             title: trackTitle,
             onClose: handleClose,
-            videoRef: videoRef as any,
+            videoRef: videoRef ?? undefined,
             qualityConfig,
           },
         },
@@ -340,11 +340,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             }}
           >
             <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white pointer-events-none" />
-            {imaPreRollActive && (
-              <p className="text-white/90 text-sm font-medium pointer-events-none px-6 text-center">
-                Tap to start ads
-              </p>
-            )}
           </div>
         )}
         {showControls && initialAdFinished && (

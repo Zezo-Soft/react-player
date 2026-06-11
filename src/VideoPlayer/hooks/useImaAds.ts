@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useVideoStore } from "../../store/VideoState";
-import { loadImaSdk } from "../ima/loadImaSdk";
+import { createImaRenderingSettings } from "../ima/createImaRenderingSettings";
+import { IMA_SDK_URL, loadImaSdk } from "../ima/loadImaSdk";
 import { createImaAdBreak } from "../ima/createImaAdBreak";
 import { syncImaAdUi } from "../ima/syncImaAdUi";
 import { watchImaUi, getImaUiRoots } from "../ima/suppressImaUi";
@@ -15,9 +16,6 @@ import { getImaSlotDimensions } from "../ima/getImaSlotDimensions";
 import { isVmapAdTag } from "../ima/isVmapAdTag";
 import { AdConfig, AdType, ImaPlaybackApi } from "../types/AdTypes";
 
-const DEFAULT_IMA_SDK =
-  "https://imasdk.googleapis.com/js/sdkloader/ima3.js";
-
 const IMA_PREROLL_TIMEOUT_MS = 20_000;
 
 export const useImaAds = (adConfig?: AdConfig) => {
@@ -26,7 +24,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
 
   const {
     videoRef,
-    videoWrapperRef,
     imaAdContainerRef,
     setIsAdPlaying,
     setAdProvider,
@@ -46,7 +43,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
   } = useVideoStore(
     useShallow((state) => ({
       videoRef: state.videoRef,
-      videoWrapperRef: state.videoWrapperRef,
       imaAdContainerRef: state.imaAdContainerRef,
       setIsAdPlaying: state.setIsAdPlaying,
       setAdProvider: state.setAdProvider,
@@ -370,12 +366,10 @@ export const useImaAds = (adConfig?: AdConfig) => {
 
       destroyAdsManager();
 
-      const settings = new google.ima.AdsRenderingSettings();
-      settings.restoreCustomPlaybackStateOnAdBreakComplete = true;
-      settings.useStyledLinearAds = false;
-      settings.uiElements = [];
-
-      const manager = event.getAdsManager(video, settings);
+      const manager = event.getAdsManager(
+        video,
+        createImaRenderingSettings()
+      );
       adsManagerRef.current = manager;
 
       const handleAdError = (adErrorEvent: google.ima.AdEvent) => {
@@ -446,10 +440,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
 
       manager.addEventListener(google.ima.AdEvent.Type.SKIPPED, () => {
         endImaBreak("skip");
-      });
-
-      manager.addEventListener(google.ima.AdEvent.Type.COMPLETE, () => {
-        /* linear pod may fire COMPLETE before CONTENT_RESUME_REQUESTED */
       });
 
       manager.addEventListener(
@@ -634,7 +624,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
       const error = new Error(
         "IMA pre-roll timed out. Tap the player to start ads, or check your ad tag and player size."
       );
-      console.warn(error.message);
       adConfig?.onAdError?.(currentAdBreakRef.current, error);
       completeImaPreRollGate();
       resumeContentAfterPreRollFailure();
@@ -668,27 +657,14 @@ export const useImaAds = (adConfig?: AdConfig) => {
     if (!adTagUrl) return;
 
     let cancelled = false;
-    const sdkUrl = imaConfig?.sdkUrl ?? DEFAULT_IMA_SDK;
+    const sdkUrl = imaConfig?.sdkUrl ?? IMA_SDK_URL;
 
     const loadSdk = async () => {
       try {
-        if (imaConfig?.sdkUrl && imaConfig.sdkUrl !== DEFAULT_IMA_SDK) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = sdkUrl;
-            script.async = true;
-            script.onload = () => resolve();
-            script.onerror = () =>
-              reject(new Error("Failed to load custom IMA SDK URL"));
-            document.head.appendChild(script);
-          });
-        } else {
-          await loadImaSdk();
-        }
+        await loadImaSdk(sdkUrl);
         if (cancelled) return;
         ensureAdDisplayContainer();
       } catch (error) {
-        console.error("IMA SDK load failed:", error);
         completeImaPreRollGate();
         adConfig?.onAdError?.(
           createImaAdBreak("pre-roll"),

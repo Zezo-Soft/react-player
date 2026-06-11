@@ -8,9 +8,9 @@ import React, {
 import { useVideoStore } from "../../store/VideoState";
 import { useShallow } from "zustand/react/shallow";
 import { AdBreak } from "../types/AdTypes";
-import { SkipForward } from "lucide-react";
-import { ControlsHeader, MiddleControls } from "./controls";
 import { IPlayerConfig } from "../../types";
+import { useOverlayAutoHide } from "../hooks/useOverlayAutoHide";
+import AdOverlayChrome from "./AdOverlayChrome";
 
 interface AdOverlayProps {
   adBreak: AdBreak;
@@ -48,16 +48,13 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
       }))
     );
 
-    const [showControls, setShowControls] = useState(true);
-    const [isHovered, setIsHovered] = useState(false);
+    const { showControls, onMouseEnter, onMouseLeave, onMouseMove } =
+      useOverlayAutoHide();
 
     const [adDuration, setAdDuration] = useState(0);
     const [requiresInteraction, setRequiresInteraction] = useState(false);
     const [adLoadError, setAdLoadError] = useState(false);
 
-    const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null
-    );
     const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const safelySetCanSkipAd = useCallback(
@@ -77,26 +74,6 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
       },
       [setSkipCountdown]
     );
-
-    useEffect(() => {
-      if (isHovered) {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-        }
-        return;
-      }
-
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
-
-      return () => {
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-        }
-      };
-    }, [isHovered]);
 
     const skipAfter = useMemo(() => {
       const rawSkipAfter = Number.isFinite(adBreak.skipAfter)
@@ -171,8 +148,7 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
 
       const playPromise = adVideoRef.play();
       if (playPromise && "catch" in playPromise) {
-        playPromise.catch((error) => {
-          console.warn("Ad play failed:", error);
+        playPromise.catch(() => {
           setRequiresInteraction(true);
           setIsPlaying(false);
         });
@@ -235,7 +211,6 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
       }
       loadTimeoutRef.current = setTimeout(() => {
         if (adVideoRef && adVideoRef.readyState < 2) {
-          console.warn("Ad load timeout:", adBreak.id);
           setAdLoadError(true);
           setRequiresInteraction(true);
         }
@@ -259,22 +234,11 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
         setRequiresInteraction(false);
       };
 
-      const handleError = (e: Event) => {
+      const handleError = () => {
         if (loadTimeoutRef.current) {
           clearTimeout(loadTimeoutRef.current);
           loadTimeoutRef.current = null;
         }
-
-        const error = e.target as HTMLVideoElement;
-        const errorCode = error.error?.code;
-        const errorMessage = error.error?.message || "Unknown ad error";
-
-        console.error("Ad playback error:", {
-          adId: adBreak.id,
-          errorCode,
-          errorMessage,
-          src: adVideoRef.src,
-        });
 
         setAdLoadError(true);
         setRequiresInteraction(true);
@@ -345,8 +309,7 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
           // Set new src
           adVideoRef.src = adBreak.adUrl;
           adVideoRef.load();
-        } catch (error) {
-          console.warn("Error loading ad:", error);
+        } catch {
           setAdLoadError(true);
         }
       }
@@ -412,12 +375,9 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
     return (
       <div
         className="absolute inset-0 bg-black z-50 flex flex-col overflow-hidden transition-opacity duration-300"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onMouseMove={() => {
-          setIsHovered(true);
-          setShowControls(true);
-        }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onMouseMove={onMouseMove}
       >
         <div className="relative flex-1 w-full flex items-center justify-center">
           <video
@@ -465,78 +425,16 @@ const AdOverlay: React.FC<AdOverlayProps> = React.memo(
           )}
         </div>
 
-        <div
-          className={`absolute inset-0 transition-all duration-300 ${
-            showControls ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="absolute inset-0 bg-linear-to-b from-black/80 via-transparent to-black/90 flex flex-col justify-between">
-            <div className="shrink-0 relative">
-              <ControlsHeader
-                config={{
-                  title:
-                    config?.config?.headerConfig?.config?.title ||
-                    "Advertisement",
-                  isTrailer: config?.config?.headerConfig?.config?.isTrailer,
-                  onClose: config?.config?.headerConfig?.config?.onClose,
-                }}
-              />
-            </div>
-            <div className="flex-1 flex items-center justify-center">
-              <MiddleControls />
-            </div>
-
-            <div className="shrink-0 relative">
-              {adBreak.skipable && (
-                <div className="px-10 pb-3 flex justify-end">
-                  <button
-                    onClick={handleSkip}
-                    disabled={!canSkipAd}
-                    className={`flex items-center gap-2 px-4 py-2 rounded transition-all duration-200 ${
-                      canSkipAd
-                        ? "bg-white/20 hover:bg-white/30 text-white cursor-pointer hover:scale-105 active:scale-95 shadow-md hover:shadow-lg border border-white/30 hover:border-white/50 backdrop-blur-md"
-                        : "bg-black/60 text-gray-400 cursor-not-allowed border border-gray-700/60"
-                    }`}
-                    style={{ borderRadius: "4px" }}
-                  >
-                    <SkipForward className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      {canSkipAd
-                        ? "Skip Ad"
-                        : `Skip in ${Math.max(skipCountdown, 0)}s`}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              <div className="px-10 pb-4">
-                <div className="relative h-1 bg-white/20 rounded-full overflow-hidden pointer-events-none select-none">
-                  <div
-                    className="absolute left-0 top-0 h-full bg-white rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg transition-all duration-300 ease-out pointer-events-none"
-                    style={{ left: `calc(${progressPercent}% - 6px)` }}
-                  />
-                </div>
-              </div>
-
-              {sponsoredUrl && (
-                <div className="px-10 pb-6 flex items-center justify-end">
-                  <a
-                    href={sponsoredUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-sky-300 hover:text-white transition-colors"
-                  >
-                    Learn More
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <AdOverlayChrome
+          config={config}
+          showControls={showControls}
+          progressPercent={progressPercent}
+          skipable={adBreak.skipable}
+          canSkipAd={canSkipAd}
+          skipCountdown={skipCountdown}
+          onSkip={handleSkip}
+          sponsoredUrl={sponsoredUrl}
+        />
       </div>
     );
   }

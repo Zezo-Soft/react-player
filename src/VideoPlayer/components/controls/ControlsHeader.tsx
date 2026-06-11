@@ -45,7 +45,18 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const [adDuration, setAdDuration] = React.useState(0);
 
   React.useEffect(() => {
-    if (!adVideoRef || !isAdPlaying) {
+    if (!isAdPlaying) {
+      setAdDuration(0);
+      return;
+    }
+
+    if (adProvider === "ima" && imaPlayback) {
+      const duration = imaPlayback.getDuration();
+      setAdDuration(Number.isFinite(duration) && duration > 0 ? duration : 0);
+      return;
+    }
+
+    if (!adVideoRef) {
       setAdDuration(0);
       return;
     }
@@ -64,7 +75,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       adVideoRef.removeEventListener("loadedmetadata", updateDuration);
       adVideoRef.removeEventListener("durationchange", updateDuration);
     };
-  }, [adVideoRef, isAdPlaying]);
+  }, [adVideoRef, isAdPlaying, adProvider, imaPlayback]);
 
   const formatTime = React.useCallback((seconds: number): string => {
     if (isNaN(seconds) || seconds < 0) return "0:00";

@@ -264,7 +264,7 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
     isAdPlaying,
   ]);
 
-  if (isAdPlaying || isImaAd) {
+  if (isAdPlaying) {
     return (
       <div className="flex justify-center items-center">
         <ControlButton
