@@ -22,6 +22,7 @@ import {
 import AdOverlay from "./components/AdOverlay";
 import ImaAdOverlay from "./components/ImaAdOverlay";
 import ErrorOverlay from "./components/ErrorOverlay";
+import { preloadImaSdk } from "./ima/loadImaSdk";
 import "../index.css";
 import "./styles/subtitles.css";
 import "./styles/ads.css";
@@ -104,6 +105,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
       const hasCustomPreRoll = Boolean(effectiveAds?.preRoll?.adUrl);
       return hasCustomPreRoll || hasImaPreRoll;
     }, [effectiveAds?.preRoll, hasImaPreRoll]);
+
+    React.useEffect(() => {
+      const ima = effectiveAds?.ima;
+      if (ima?.adTagUrl) {
+        preloadImaSdk(ima.sdkUrl);
+      }
+    }, [effectiveAds?.ima?.adTagUrl, effectiveAds?.ima?.sdkUrl]);
+
     const {
       registerVideoRef,
       videoRef,
@@ -234,8 +243,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
     } = useVideoEvents();
 
     const { skipAd } = useAdManager(effectiveAds);
-    const { startImaPreRoll, hasImaPreRoll: imaPreRollActive } =
-      useImaAds(effectiveAds);
+    const { startImaPreRoll, imaPreRollNeedsGesture } = useImaAds(effectiveAds);
     const { error, handleVideoError, retry } = useVideoError();
 
     const hasResumedRef = React.useRef(false);
@@ -279,7 +287,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
 
         <video
           playsInline
-          preload={hasPreRoll ? "metadata" : "auto"}
+          preload="auto"
           ref={registerVideoRef}
           onSeeked={onSeeked}
           poster={trackPoster}
@@ -320,18 +328,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
         )}
         {shouldShowPlaceholder && (
           <div
-            className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/90 backdrop-blur-sm cursor-pointer"
-            role="button"
-            tabIndex={0}
+            className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/90 backdrop-blur-sm ${
+              imaPreRollNeedsGesture ? "cursor-pointer" : ""
+            }`}
+            role={imaPreRollNeedsGesture ? "button" : undefined}
+            tabIndex={imaPreRollNeedsGesture ? 0 : undefined}
             aria-label={
-              imaPreRollActive
+              imaPreRollNeedsGesture
                 ? "Start advertisement playback"
-                : "Loading video"
+                : "Loading advertisement"
             }
-            onClick={imaPreRollActive ? startImaPreRoll : undefined}
+            onClick={imaPreRollNeedsGesture ? startImaPreRoll : undefined}
             onKeyDown={(e) => {
               if (
-                imaPreRollActive &&
+                imaPreRollNeedsGesture &&
                 (e.key === "Enter" || e.key === " ")
               ) {
                 e.preventDefault();
@@ -340,6 +350,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = React.memo(
             }}
           >
             <Loader className="w-14 h-14 lg:w-18 lg:h-18 animate-spin text-white pointer-events-none" />
+            {imaPreRollNeedsGesture && (
+              <p className="text-sm text-white/80 pointer-events-none">
+                Tap to start
+              </p>
+            )}
           </div>
         )}
         {showControls && initialAdFinished && (

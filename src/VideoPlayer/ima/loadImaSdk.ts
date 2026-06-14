@@ -5,6 +5,9 @@ const loadPromises = new Map<string, Promise<void>>();
 export const isImaSdkLoaded = (): boolean =>
   typeof window !== "undefined" && typeof google !== "undefined" && !!google.ima;
 
+const isScriptLoaded = (script: HTMLScriptElement): boolean =>
+  script.dataset.zezoImaLoaded === "true" || isImaSdkLoaded();
+
 /**
  * Loads the Google IMA HTML5 SDK once per URL per page.
  */
@@ -15,7 +18,7 @@ export const loadImaSdk = (sdkUrl: string = IMA_SDK_URL): Promise<void> => {
 
   const url = sdkUrl.trim() || IMA_SDK_URL;
 
-  if (url === IMA_SDK_URL && isImaSdkLoaded()) {
+  if (isImaSdkLoaded()) {
     return Promise.resolve();
   }
 
@@ -27,7 +30,12 @@ export const loadImaSdk = (sdkUrl: string = IMA_SDK_URL): Promise<void> => {
   const promise = new Promise<void>((resolve, reject) => {
     const selector = `script[data-zezo-ima-sdk="${url}"]`;
     const scriptEl = document.querySelector<HTMLScriptElement>(selector);
+
     if (scriptEl) {
+      if (isScriptLoaded(scriptEl)) {
+        resolve();
+        return;
+      }
       scriptEl.addEventListener("load", () => resolve(), { once: true });
       scriptEl.addEventListener(
         "error",
@@ -41,7 +49,10 @@ export const loadImaSdk = (sdkUrl: string = IMA_SDK_URL): Promise<void> => {
     script.src = url;
     script.async = true;
     script.dataset.zezoImaSdk = url;
-    script.onload = () => resolve();
+    script.onload = () => {
+      script.dataset.zezoImaLoaded = "true";
+      resolve();
+    };
     script.onerror = () => {
       loadPromises.delete(url);
       reject(new Error("Failed to load Google IMA SDK"));
@@ -51,4 +62,11 @@ export const loadImaSdk = (sdkUrl: string = IMA_SDK_URL): Promise<void> => {
 
   loadPromises.set(url, promise);
   return promise;
+};
+
+/**
+ * Fire-and-forget IMA SDK preload. Safe to call before the player mounts.
+ */
+export const preloadImaSdk = (sdkUrl?: string): void => {
+  loadImaSdk(sdkUrl).catch(() => undefined);
 };

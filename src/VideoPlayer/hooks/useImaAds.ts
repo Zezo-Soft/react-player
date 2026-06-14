@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useVideoStore } from "../../store/VideoState";
 import { createImaRenderingSettings } from "../ima/createImaRenderingSettings";
-import { IMA_SDK_URL, loadImaSdk } from "../ima/loadImaSdk";
+import { IMA_SDK_URL, isImaSdkLoaded, loadImaSdk } from "../ima/loadImaSdk";
 import { createImaAdBreak } from "../ima/createImaAdBreak";
 import { syncImaAdUi } from "../ima/syncImaAdUi";
 import { watchImaUi, getImaUiRoots } from "../ima/suppressImaUi";
@@ -264,6 +264,13 @@ export const useImaAds = (adConfig?: AdConfig) => {
         }
 
         resetImaAdUiState();
+        resumeContentIfNeeded();
+      } else if (
+        currentBreakTypeRef.current === "pre-roll" &&
+        preRollRequestedRef.current &&
+        !preRollCompletedRef.current
+      ) {
+        completeImaPreRollGate();
         resumeContentIfNeeded();
       }
 
@@ -556,14 +563,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
     );
   }, [onAdLoaderError, onAdsManagerLoaded]);
 
-  const initializeIma = useCallback(() => {
-    if (initializedRef.current) return;
-    ensureAdDisplayContainer();
-    if (!adDisplayContainerRef.current) return;
-    adDisplayContainerRef.current.initialize();
-    initializedRef.current = true;
-  }, [ensureAdDisplayContainer]);
-
   const requestImaAds = useCallback(
     (type: AdType) => {
       if (!adTagUrl || !adsLoaderRef.current) return;
@@ -640,17 +639,61 @@ export const useImaAds = (adConfig?: AdConfig) => {
     resumeContentAfterPreRollFailure,
   ]);
 
-  const tryStartPreRoll = useCallback(() => {
-    if (!adTagUrl || preRollRequestedRef.current) return;
-    if (!useVideoStore.getState().videoRef) return;
+  const initializeIma = useCallback((): boolean => {
+    if (initializedRef.current) return true;
     ensureAdDisplayContainer();
-    if (!initializedRef.current) return;
+    if (!adDisplayContainerRef.current) return false;
+    try {
+      adDisplayContainerRef.current.initialize();
+      initializedRef.current = true;
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }, [ensureAdDisplayContainer]);
+
+  type PreRollStartResult = "started" | "pending" | "needs-gesture";
+
+  const tryStartPreRoll = useCallback((): PreRollStartResult => {
+    if (!adTagUrl || preRollRequestedRef.current) {
+      return preRollRequestedRef.current ? "started" : "pending";
+    }
+
+    const { videoRef: video, imaAdContainerRef: container } =
+      useVideoStore.getState();
+    if (!video || !container) return "pending";
+    if (typeof google === "undefined" || !google.ima) return "pending";
+
+    ensureAdDisplayContainer();
+    if (!initializeIma()) return "needs-gesture";
+
     requestPreRoll();
-  }, [adTagUrl, ensureAdDisplayContainer, requestPreRoll]);
+    return "started";
+  }, [adTagUrl, ensureAdDisplayContainer, initializeIma, requestPreRoll]);
+
+  const [imaSdkReady, setImaSdkReady] = useState(isImaSdkLoaded);
+  const [imaPreRollNeedsGesture, setImaPreRollNeedsGesture] = useState(false);
+
+  const attemptAutoStartPreRoll = useCallback((): PreRollStartResult => {
+    if (!adTagUrl || preRollCompletedRef.current) return "pending";
+    if (!useVideoStore.getState().videoRef) return "pending";
+    if (!useVideoStore.getState().imaAdContainerRef) return "pending";
+    if (!imaSdkReady || typeof google === "undefined" || !google.ima) {
+      return "pending";
+    }
+
+    const result = tryStartPreRoll();
+    if (result === "needs-gesture") {
+      setImaPreRollNeedsGesture(true);
+    }
+    return result;
+  }, [adTagUrl, imaSdkReady, tryStartPreRoll]);
 
   const handleUserGesture = useCallback(() => {
-    initializeIma();
-    tryStartPreRoll();
+    setImaPreRollNeedsGesture(false);
+    if (initializeIma()) {
+      tryStartPreRoll();
+    }
   }, [initializeIma, tryStartPreRoll]);
 
   useEffect(() => {
@@ -664,6 +707,8 @@ export const useImaAds = (adConfig?: AdConfig) => {
         await loadImaSdk(sdkUrl);
         if (cancelled) return;
         ensureAdDisplayContainer();
+        setImaSdkReady(true);
+        attemptAutoStartPreRoll();
       } catch (error) {
         completeImaPreRollGate();
         adConfig?.onAdError?.(
@@ -674,6 +719,10 @@ export const useImaAds = (adConfig?: AdConfig) => {
       }
     };
 
+    if (isImaSdkLoaded()) {
+      setImaSdkReady(true);
+    }
+
     loadSdk();
 
     return () => {
@@ -682,10 +731,43 @@ export const useImaAds = (adConfig?: AdConfig) => {
   }, [
     adTagUrl,
     adConfig,
+    attemptAutoStartPreRoll,
     completeImaPreRollGate,
     ensureAdDisplayContainer,
     imaConfig?.sdkUrl,
     resumeContentAfterPreRollFailure,
+  ]);
+
+  useEffect(() => {
+    if (!adTagUrl || !imaSdkReady || !videoRef || !imaAdContainerRef) return;
+    attemptAutoStartPreRoll();
+  }, [
+    adTagUrl,
+    imaSdkReady,
+    videoRef,
+    videoRef?.src,
+    imaAdContainerRef,
+    attemptAutoStartPreRoll,
+  ]);
+
+  useEffect(() => {
+    if (!adTagUrl) return;
+
+    preRollRequestedRef.current = false;
+    preRollCompletedRef.current = false;
+    contentCompleteSentRef.current = false;
+    contentHasStartedRef.current = false;
+    vmapSessionRef.current = false;
+    adBreakActiveRef.current = false;
+    playedCuePointsRef.current.clear();
+    setImaPreRollNeedsGesture(false);
+    setImaPreRollGateComplete(false);
+    clearPreRollTimeout();
+  }, [
+    adTagUrl,
+    videoRef?.src,
+    setImaPreRollGateComplete,
+    clearPreRollTimeout,
   ]);
 
   useEffect(() => {
@@ -720,53 +802,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
     setImaPlayback(api);
     return () => setImaPlayback(null);
   }, [adTagUrl, performImaSkip, setImaPlayback, setMuted]);
-
-  const attemptAutoStartPreRoll = useCallback(() => {
-    if (!adTagUrl || preRollCompletedRef.current) return;
-    if (typeof google === "undefined" || !google.ima) return;
-    if (!useVideoStore.getState().videoRef) return;
-    if (!useVideoStore.getState().imaAdContainerRef) return;
-
-    ensureAdDisplayContainer();
-    initializeIma();
-    tryStartPreRoll();
-  }, [
-    adTagUrl,
-    ensureAdDisplayContainer,
-    initializeIma,
-    tryStartPreRoll,
-  ]);
-
-  useEffect(() => {
-    if (!adTagUrl || !videoRef || !imaAdContainerRef) return;
-    if (typeof google === "undefined" || !google.ima) return;
-
-    ensureAdDisplayContainer();
-
-    const onCanPlay = () => {
-      attemptAutoStartPreRoll();
-    };
-
-    videoRef.addEventListener("canplay", onCanPlay);
-    if (videoRef.readyState >= 2) {
-      onCanPlay();
-    }
-
-    const rafId = requestAnimationFrame(() => {
-      attemptAutoStartPreRoll();
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      videoRef.removeEventListener("canplay", onCanPlay);
-    };
-  }, [
-    adTagUrl,
-    videoRef,
-    imaAdContainerRef,
-    ensureAdDisplayContainer,
-    attemptAutoStartPreRoll,
-  ]);
 
   useEffect(() => {
     if (!adTagUrl || !videoRef || !imaConfig?.midRollCuePoints?.length) {
@@ -857,25 +892,6 @@ export const useImaAds = (adConfig?: AdConfig) => {
   }, [adTagUrl]);
 
   useEffect(() => {
-    if (!adTagUrl) return;
-
-    preRollRequestedRef.current = false;
-    preRollCompletedRef.current = false;
-    contentCompleteSentRef.current = false;
-    contentHasStartedRef.current = false;
-    vmapSessionRef.current = false;
-    adBreakActiveRef.current = false;
-    playedCuePointsRef.current.clear();
-    setImaPreRollGateComplete(false);
-    clearPreRollTimeout();
-  }, [
-    adTagUrl,
-    videoRef?.src,
-    setImaPreRollGateComplete,
-    clearPreRollTimeout,
-  ]);
-
-  useEffect(() => {
     return () => {
       clearPreRollTimeout();
     };
@@ -885,6 +901,7 @@ export const useImaAds = (adConfig?: AdConfig) => {
     hasIma: Boolean(adTagUrl),
     hasImaPreRoll:
       Boolean(adTagUrl) && imaConfig?.preRoll !== false,
+    imaPreRollNeedsGesture,
     initializeIma,
     startImaPreRoll: handleUserGesture,
   };
