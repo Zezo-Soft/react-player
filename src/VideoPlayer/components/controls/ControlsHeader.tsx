@@ -20,6 +20,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
     currentEpisodeIndex,
     resetStore,
     isAdPlaying,
+    adProvider,
+    imaPlayback,
     muted,
     setMuted,
     adCurrentTime,
@@ -32,6 +34,8 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       currentEpisodeIndex: state.currentEpisodeIndex,
       resetStore: state.resetStore,
       isAdPlaying: state.isAdPlaying,
+      adProvider: state.adProvider,
+      imaPlayback: state.imaPlayback,
       muted: state.muted,
       setMuted: state.setMuted,
       adCurrentTime: state.adCurrentTime,
@@ -41,7 +45,18 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   const [adDuration, setAdDuration] = React.useState(0);
 
   React.useEffect(() => {
-    if (!adVideoRef || !isAdPlaying) {
+    if (!isAdPlaying) {
+      setAdDuration(0);
+      return;
+    }
+
+    if (adProvider === "ima" && imaPlayback) {
+      const duration = imaPlayback.getDuration();
+      setAdDuration(Number.isFinite(duration) && duration > 0 ? duration : 0);
+      return;
+    }
+
+    if (!adVideoRef) {
       setAdDuration(0);
       return;
     }
@@ -60,7 +75,7 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
       adVideoRef.removeEventListener("loadedmetadata", updateDuration);
       adVideoRef.removeEventListener("durationchange", updateDuration);
     };
-  }, [adVideoRef, isAdPlaying]);
+  }, [adVideoRef, isAdPlaying, adProvider, imaPlayback]);
 
   const formatTime = React.useCallback((seconds: number): string => {
     if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -99,6 +114,17 @@ const ControlsHeader: React.FC<IControlsHeaderProps> = ({ config }) => {
   }, []);
 
   const handleMute = () => {
+    if (isAdPlaying && adProvider === "ima" && imaPlayback) {
+      const currentVolume = imaPlayback.getVolume();
+      const nextMuted = currentVolume > 0;
+      imaPlayback.setVolume(nextMuted ? 0 : 1);
+      if (videoRef) {
+        videoRef.muted = nextMuted;
+      }
+      setMuted(nextMuted);
+      return;
+    }
+
     const targetElement = isAdPlaying ? adVideoRef ?? videoRef : videoRef;
     if (!targetElement) return;
 

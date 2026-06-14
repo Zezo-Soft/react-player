@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 
 interface UsePrimaryVideoLifecycleParams {
   hasPreRoll: boolean;
+  hasImaPreRoll?: boolean;
   trackSrc: string;
 }
 
@@ -21,6 +22,7 @@ interface PrimaryVideoLifecycleResult {
 
 export const usePrimaryVideoLifecycle = ({
   hasPreRoll,
+  hasImaPreRoll = false,
   trackSrc,
 }: UsePrimaryVideoLifecycleParams): PrimaryVideoLifecycleResult => {
   const {
@@ -29,6 +31,7 @@ export const usePrimaryVideoLifecycle = ({
     isAdPlaying,
     currentAd,
     adType,
+    imaPreRollGateComplete,
     setMuted,
     setPlaying,
     setIsPlaying,
@@ -39,6 +42,7 @@ export const usePrimaryVideoLifecycle = ({
       isAdPlaying: state.isAdPlaying,
       currentAd: state.currentAd,
       adType: state.adType,
+      imaPreRollGateComplete: state.imaPreRollGateComplete,
       setMuted: state.setMuted,
       setPlaying: state.setPlaying,
       setIsPlaying: state.setIsPlaying,
@@ -83,6 +87,13 @@ export const usePrimaryVideoLifecycle = ({
     }
     previousIsAdPlayingRef.current = isAdPlaying;
   }, [hasPreRoll, initialAdStarted, initialAdFinished, isAdPlaying]);
+
+  useEffect(() => {
+    if (hasImaPreRoll && imaPreRollGateComplete && !initialAdFinished) {
+      setInitialAdFinished(true);
+      setInitialAdStarted(true);
+    }
+  }, [hasImaPreRoll, imaPreRollGateComplete, initialAdFinished]);
 
   useEffect(() => {
     if (!videoRef) {

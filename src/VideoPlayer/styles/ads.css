@@ -1,26 +1,7 @@
-
-.loader {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: inline-block;
-  border-top: 3px solid #fff;
-  border-right: 3px solid transparent;
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .loader {
-    animation: none;
-  }
+/* Hide IMA playback chrome — skip UI stays in DOM for programmatic activation */
+.video-player .ima-controls-div,
+.video-player .ima-countdown-div {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

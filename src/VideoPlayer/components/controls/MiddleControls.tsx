@@ -107,16 +107,25 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
     [ppConfig?.backgroundColor, ppConfig?.borderRadius, ppConfig?.padding]
   );
 
-  const { videoRef, adVideoRef, isPlaying, setIsPlaying, isAdPlaying } =
-    useVideoStore(
-      useShallow((state) => ({
-        videoRef: state.videoRef,
-        adVideoRef: state.adVideoRef,
-        isPlaying: state.isPlaying,
-        setIsPlaying: state.setIsPlaying,
-        isAdPlaying: state.isAdPlaying,
-      }))
-    );
+  const {
+    videoRef,
+    adVideoRef,
+    isPlaying,
+    setIsPlaying,
+    isAdPlaying,
+    adProvider,
+    imaPlayback,
+  } = useVideoStore(
+    useShallow((state) => ({
+      videoRef: state.videoRef,
+      adVideoRef: state.adVideoRef,
+      isPlaying: state.isPlaying,
+      setIsPlaying: state.setIsPlaying,
+      isAdPlaying: state.isAdPlaying,
+      adProvider: state.adProvider,
+      imaPlayback: state.imaPlayback,
+    }))
+  );
   const { setIsBuffering } = useVideoStore(
     useShallow((state) => ({
       setIsBuffering: state.setIsBuffering,
@@ -124,7 +133,8 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
   );
   const [isBuffering, setIsBufferingLocal] = useState(false);
 
-  const videoElement = isAdPlaying ? adVideoRef : videoRef;
+  const isImaAd = isAdPlaying && adProvider === "ima";
+  const videoElement = isAdPlaying && !isImaAd ? adVideoRef : videoRef;
 
   const resetControlsVisibility = useCallback(() => {
     if (typeof window === "undefined") {
@@ -134,6 +144,18 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
   }, []);
 
   const handlePlayPause = useCallback(() => {
+    if (isImaAd && imaPlayback) {
+      if (isPlaying) {
+        imaPlayback.pause();
+        setIsPlaying(false);
+      } else {
+        imaPlayback.resume();
+        setIsPlaying(true);
+      }
+      resetControlsVisibility();
+      return;
+    }
+
     if (!videoElement) return;
 
     if (videoElement.paused) {
@@ -149,7 +171,14 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
       setIsPlaying(false);
       resetControlsVisibility();
     }
-  }, [videoElement, setIsPlaying, resetControlsVisibility]);
+  }, [
+    isImaAd,
+    imaPlayback,
+    isPlaying,
+    videoElement,
+    setIsPlaying,
+    resetControlsVisibility,
+  ]);
 
   const handleBackward = useCallback(() => {
     if (!videoElement) return;
@@ -170,7 +199,7 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
   }, [videoElement, resetControlsVisibility]);
 
   useEffect(() => {
-    if (!videoElement) return;
+    if (isImaAd || !videoElement) return;
 
     const handleWaiting = () => {
       setIsBufferingLocal(true);
@@ -200,7 +229,7 @@ const MiddleControls: React.FC<MiddleControlsProps> = ({ config }) => {
       videoElement.removeEventListener("canplay", handleCanPlay);
       videoElement.removeEventListener("stalled", handleStalled);
     };
-  }, [videoElement, isAdPlaying, setIsBuffering]);
+  }, [videoElement, isAdPlaying, isImaAd, setIsBuffering]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

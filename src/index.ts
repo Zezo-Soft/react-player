@@ -16,6 +16,14 @@ export type {
   PlayPauseButtonConfig,
 } from "./VideoPlayer/types/VideoPlayerTypes";
 export type {
+  AdConfig,
+  AdBreak,
+  AdType,
+  AdProvider,
+  ImaConfig,
+  ImaPlaybackApi,
+} from "./VideoPlayer/types/AdTypes";
+export type {
   VideoState,
   VideoRefsState,
   VideoPlaybackState,
